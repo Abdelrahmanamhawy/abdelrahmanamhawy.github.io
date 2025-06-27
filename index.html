@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shadow Realm Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Rubik+Glitch&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0b16;
+      color: #f0e6f6;
+      font-family: 'Rubik Glitch', cursive;
+      background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05), transparent 70%), url('https://www.transparenttextures.com/patterns/dark-mosaic.png');
+    }
+
+    header {
+      background: linear-gradient(to right, #1b0d2b, #0e0b16);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 0 20px #5c1e82;
+    }
+
+    h1 {
+      font-family: 'UnifrakturCook', cursive;
+      font-size: 3rem;
+      color: #d4bfff;
+      margin: 0;
+      text-shadow: 0 0 10px #8f3ec9;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      background: #1b0d2b;
+      padding: 1rem;
+      box-shadow: 0 0 10px #472f6d;
+    }
+
+    nav a {
+      color: #dcb3ff;
+      margin: 0 1.5rem;
+      text-decoration: none;
+      font-size: 1.2rem;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #fff;
+    }
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -5px;
+      width: 100%;
+      height: 2px;
+      background: #dcb3ff;
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.3s ease;
+    }
+
+    nav a:hover::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    main {
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .glow-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid #452a66;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 700px;
+      margin: 2rem auto;
+      box-shadow: 0 0 25px rgba(179, 138, 255, 0.2);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #999;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Shadow Realm</h1>
+  </header>
+
+  <nav>
+    <a href="about.html">About Me</a>
+    <a href="writeups.html">Writeups</a>
+    <a href="talks.html">Talks</a>
+    <a href="projects.html">Projects</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+
+  <main>
+    <div class="glow-box">
+      <p>Welcome, wanderer, to the archives of shadows and exploits.</p>
+      <p>In this realm, you'll find writeups, forbidden knowledge, and dark wisdom shared from the edge of cyberspace.</p>
+      <p>Choose a path from above — and may your journey be fruitful.</p>
+    </div>
+  </main>
+
+  <footer>
+    © 2025 Shadow Realm Blog — Cursed with Curiosity.
+  </footer>
+
+</body>
+</html>
