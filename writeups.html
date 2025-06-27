@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Writeups - Shadow Realm</title>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Rubik+Glitch&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0e0b16;
+      color: #f0e6f6;
+      font-family: 'Rubik Glitch', cursive;
+    }
+
+    header {
+      background: linear-gradient(to right, #1b0d2b, #0e0b16);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 0 20px #5c1e82;
+    }
+
+    h1 {
+      font-family: 'UnifrakturCook', cursive;
+      font-size: 3rem;
+      color: #d4bfff;
+      margin: 0;
+      text-shadow: 0 0 10px #8f3ec9;
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .writeup {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid #452a66;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 25px rgba(179, 138, 255, 0.2);
+      line-height: 1.7;
+      font-size: 1.1rem;
+    }
+
+    .writeup h2 {
+      color: #dcb3ff;
+      margin-top: 0;
+      font-size: 2rem;
+    }
+
+    .writeup a {
+      color: #b788ff;
+      text-decoration: none;
+    }
+
+    .writeup a:hover {
+      text-decoration: underline;
+    }
+
+    .writeup .source {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #999;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Forbidden Writeups</h1>
+  </header>
+
+  <main id="writeups">
+    <!-- Articles will load here -->
+  </main>
+
+  <footer>
+    © 2025 Shadow Realm | Powered by dark JSON scrolls.
+  </footer>
+
+  <script>
+    fetch("writeups.json")
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("writeups");
+        data.forEach(entry => {
+          const div = document.createElement("div");
+          div.className = "writeup";
+          div.innerHTML = `
+            <h2><a href="${entry.link}" target="_blank">${entry.title}</a></h2>
+            <p>${entry.description}</p>
+            <div class="source">Published on: ${entry.source}</div>
+          `;
+          container.appendChild(div);
+        });
+      })
+      .catch(err => {
+        document.getElementById("writeups").innerHTML = "<p style='color:red;'>Failed to load writeups 😿</p>";
+        console.error("Error loading writeups.json:", err);
+      });
+  </script>
+
+</body>
+</html>

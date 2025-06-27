@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Hacking a Unity Game on Android in 5 Minutes Using Frida",
+    "link": "https://www.linkedin.com/pulse/hacking-unity-game-android-5-minutes-using-frida-abdelrahman-amhawy/",
+    "description": "Quick and powerful Frida runtime hook on Unity-based Android games. Minimal time, maximal impact.",
+    "source": "LinkedIn"
+  },
+  {
+    "title": "Hacking Android Games – Deep Dive",
+    "link": "https://8ksec.io/hacking-android-games/",
+    "description": "A comprehensive breakdown of Android game hacking with Frida, patching, reversing, and real-world tricks.",
+    "source": "8ksec"
+  },
+  {
+    "title": "Stealing User Files – XSS to Local File Inclusion",
+    "link": "https://www.linkedin.com/pulse/stealing-user-files-story-harmless-xss-local-file-inclusion-amhawy-ytfvf/",
+    "description": "From a 'harmless' stored XSS to stealing sensitive files through chained exploits.",
+    "source": "LinkedIn"
+  }
+]
