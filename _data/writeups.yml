@@ -1,3 +1,8 @@
+- title: "Split the payload, not the cheque — Five P3s walk into a bar. One critical walks out."
+  link: "/writeups/split-the-payload-not-the-cheque/"
+  description: "Dangling markup, DOM clobbering, CSS injection, and a JS bridge — five low-severity primitives, chained into one Android account takeover."
+  source: "This site"
+
 - title: "How I Was Able to Reveal Confidential Financial Statements via IDOR"
   link: "https://www.linkedin.com/pulse/how-i-able-reveal-confidential-financial-statements-idor-amhawy-jct8f/"
   description: "Having fun with IDORs."
