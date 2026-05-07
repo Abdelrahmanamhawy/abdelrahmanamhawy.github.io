@@ -71,7 +71,7 @@ author:
       url: "https://github.com/Abdelrahmanamhawy"
     - label: "LinkedIn"
       icon: "fab fa-fw fa-linkedin"
-      url: "https://www.linkedin.com/in/abdelrahmanamhawy"
+      url: "https://www.linkedin.com/in/abdelrahman-amhawy/"
 
 # Site Footer Links
 footer:
@@ -81,7 +81,7 @@ footer:
       url: "https://github.com/Abdelrahmanamhawy"
     - label: "LinkedIn"
       icon: "fab fa-fw fa-linkedin"
-      url: "https://www.linkedin.com/in/abdelrahmanamhawy"
+      url: "https://www.linkedin.com/in/abdelrahman-amhawy/"
 
 # Pagination
 paginate: 5
