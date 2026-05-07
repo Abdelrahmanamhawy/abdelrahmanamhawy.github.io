@@ -1,0 +1,111 @@
+# Theme
+remote_theme: "mmistakes/minimal-mistakes@4.26.2"
+minimal_mistakes_skin: "dark"
+
+# Site Settings
+locale: "en-US"
+title: "Abdelrahman Amhawy"
+title_separator: "-"
+name: "Abdelrahman Amhawy"
+description: "Personal site of Abdelrahman Amhawy."
+url: "https://abdelrahmanamhawy.github.io"
+baseurl: ""
+repository: "Abdelrahmanamhawy/abdelrahmanamhawy.github.io"
+
+# Search
+search: true
+search_full_content: true
+search_provider: lunr
+lunr:
+  search_within_pages: false
+
+# Reading Files
+include:
+  - _pages
+exclude:
+  - "*.gemspec"
+  - "*.gem"
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .bundle
+  - .sass-cache
+  - .jekyll-cache
+
+# Conversion
+markdown: kramdown
+highlighter: rouge
+lsi: false
+excerpt_separator: "\n\n"
+incremental: false
+
+# Markdown Processing
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+  footnote_nr: 1
+  entity_output: as_char
+  toc_levels: 1..6
+  smart_quotes: lsquo,rsquo,ldquo,rdquo
+  enable_coderay: false
+
+# Plugins
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-gist
+  - jekyll-feed
+  - jekyll-include-cache
+  - jekyll-remote-theme
+
+# Author / Sidebar
+author:
+  name   : "Abdelrahman Amhawy"
+  avatar : # path to avatar image, e.g. "/assets/images/avatar.png"
+  bio    : "Welcome to my site."
+  location : ""
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/Abdelrahmanamhawy"
+    - label: "LinkedIn"
+      icon: "fab fa-fw fa-linkedin"
+      url: "https://www.linkedin.com/in/abdelrahmanamhawy"
+
+# Site Footer Links
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/Abdelrahmanamhawy"
+    - label: "LinkedIn"
+      icon: "fab fa-fw fa-linkedin"
+      url: "https://www.linkedin.com/in/abdelrahmanamhawy"
+
+# Pagination
+paginate: 5
+paginate_path: /page:num/
+
+# Defaults
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single
+      author_profile: true
+      read_time: true
+      comments: false
+      share: true
+      related: true
+      toc: true
+      toc_sticky: true
+  # _pages
+  - scope:
+      path: "_pages"
+      type: pages
+    values:
+      layout: single
+      author_profile: true
