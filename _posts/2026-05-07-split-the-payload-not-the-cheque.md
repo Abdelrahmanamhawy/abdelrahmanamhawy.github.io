@@ -4,7 +4,9 @@ date: 2026-05-07
 permalink: /writeups/split-the-payload-not-the-cheque/
 excerpt: "Dangling markup, DOM clobbering, CSS injection, and a JS bridge — five low-severity primitives, chained into one Android account takeover."
 header:
-  teaser: /assets/images/split-payload-01-banner.png
+  image: /assets/images/split-payload-cover.jpg
+  og_image: /assets/images/split-payload-cover.jpg
+  teaser: /assets/images/split-payload-cover.jpg
 categories:
   - writeups
 tags:
