@@ -52,7 +52,7 @@ So a *sibling* under the same parent that required authentication and returned p
 ### The two endpoints under one roof
 
 - **Public sibling** — cacheable by design, no auth, same response for everyone. This is what the cache rule was written for.
-- **Authenticated endpoint** — same parent path, returned `[per-user data — fill in: profile / entitlements / etc.]`, and set `Cache-Control: private`.
+- **Authenticated endpoint** — same parent path, returned `[per-user data — : profile / entitlements / etc.]`, and set `Cache-Control: private`.
 
 Because the edge rule keyed on the shared parent prefix, it treated **both** as cacheable and ignored the `private` directive on the authenticated one.
 
@@ -69,7 +69,6 @@ Because the edge rule keyed on the shared parent prefix, it treated **both** as 
    Response shows a cache **MISS** being stored despite `Cache-Control: private`:
 
    ```
-   [Paste actual observed headers, e.g.:]
    Cache-Control: private
    CF-Cache-Status: MISS    -> HIT on replay
    Age: [n]
