@@ -79,7 +79,6 @@ Because the edge rule keyed on the shared parent prefix, it treated **both** as 
 
 3. Edge replays the cached response — **HIT** — serving Victim's private data to an attacker with no credentials.
 
-`[Insert redacted Burp comparison / screenshot of the two responses]`
 
 ---
 
@@ -87,7 +86,7 @@ Because the edge rule keyed on the shared parent prefix, it treated **both** as 
 
 Any unauthenticated attacker who requests (or predicts) the cached URL reads authenticated user data — no session, no interaction required beyond the victim's response having been cached once. Depending on `[what the endpoint exposed]`, impact ranges from PII disclosure to `[account/session implications if applicable]`.
 
-**Severity:** `[CVSS vector + score submitted]`
+
 
 ---
 
