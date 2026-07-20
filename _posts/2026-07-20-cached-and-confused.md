@@ -1,3 +1,15 @@
+---
+title: "Cached and Confused — A Story of Cache Deception"
+excerpt: "A private API turned public — not by the classic extension trick, but by a cache rule scoped to the wrong parent path."
+date: 2026-07-20
+header:
+  image: /assets/images/cached-and-confused-cover.png
+  teaser: /assets/images/cached-and-confused-cover.png
+toc: true
+toc_sticky: true
+---
+
+
 # Cached and Confused
 
 *How a cache rule scoped to a parent directory turned a private API into a public one*
